@@ -1,6 +1,6 @@
 # Imports
-from app.models.model import NormalMLP, SoftGatedMoE
 
-# Create server class
+
 class Server:
-    pass
+    def __init__(self):
+        pass
