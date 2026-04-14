@@ -1,6 +1,17 @@
+# Input data directory
 data/input/
+
+# Processed data directory
 data/processed/
+
+# Environment variables
 .env
+
+# Virtual environment
 venv/
+
+# Python cache files
 __pycache__/
+
+# Log files
 logs/

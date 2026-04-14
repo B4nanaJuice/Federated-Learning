@@ -21,7 +21,7 @@ def read_csv() -> pd.DataFrame:
 def preprocess_data(df: pd.DataFrame, building_id: int) -> pd.DataFrame:
     """
     Preprocesses the input DataFrame by selecting specific columns and returning a new DataFrame.
-    The columns selected include 'date', 'load_X', 'pv_X', 'temp', 'rhum', 'wdir', 'wspd', and 'pres', where X is the building_id.
+    The columns selected include 'date', 'load_X', 'pv_X', 'temp', 'rhum', 'wdir', and 'wspd', where X is the building_id.
 
     Args:
         df (pd.DataFrame): The input DataFrame to preprocess.
@@ -30,7 +30,7 @@ def preprocess_data(df: pd.DataFrame, building_id: int) -> pd.DataFrame:
     Returns:
         pd.DataFrame: A new DataFrame containing only the selected columns.
     """
-    columns_to_copy: list[str] = ['date', f'load_{building_id}', f'pv_{building_id}', 'temp', 'rhum', 'wdir', 'wspd', 'pres']
+    columns_to_copy: list[str] = ['date', f'load_{building_id}', f'pv_{building_id}', 'temp', 'rhum', 'wdir', 'wspd']
     new_df: pd.DataFrame = df[columns_to_copy].copy()
     new_df.rename(columns = {f'load_{building_id}': 'load', f'pv_{building_id}': 'pv'}, inplace = True)
     return new_df
@@ -71,14 +71,14 @@ def compute_net_consumption(df: pd.DataFrame) -> pd.DataFrame:
 def reorder_columns(df: pd.DataFrame) -> pd.DataFrame:
     """
     Reorders the columns of the input DataFrame to a specific order.
-    The desired order of columns is: 'weekday', 'tod_sin', 'tod_cos', 'temp', 'rhum', 'wspd', 'wdir', 'pres', 'load', 'pv', 'net'.
+    The desired order of columns is: 'weekday', 'tod_sin', 'tod_cos', 'temp', 'rhum', 'wspd', 'wdir', 'load', 'pv', 'net'.
 
     Args:
         df (pd.DataFrame): The input DataFrame with columns to reorder.
     Returns:
         pd.DataFrame: A new DataFrame with columns reordered to the specified order.
     """
-    desired_order: list[str] = ['weekday', 'tod_sin', 'tod_cos', 'temp', 'rhum', 'wspd', 'wdir', 'pres', 'load', 'pv', 'net']
+    desired_order: list[str] = ['weekday', 'tod_sin', 'tod_cos', 'temp', 'rhum', 'wspd', 'wdir', 'load', 'pv', 'net']
     return df[desired_order]
 
 def normalize_energy_data(df: pd.DataFrame) -> pd.DataFrame:
@@ -111,7 +111,7 @@ def normalize_weather_data(df: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: A new DataFrame with the normalized weather-related columns.
     """
-    weather_columns: list[str] = ['temp', 'rhum', 'wdir', 'wspd', 'pres']
+    weather_columns: list[str] = ['temp', 'rhum', 'wdir', 'wspd']
     for col in weather_columns:
         mean_val: float = df[col].mean()
         std_val: float = df[col].std()

@@ -24,7 +24,6 @@ Those variables are the same for each building.
 | rhum | Relative humidity |
 | wspd | Wind speed |
 | wdir | Wind direction |
-| pres | Pressure |
 
 Those variables are called exogenous variables because they influence energy consumption but are not directly energy data.
 
@@ -56,7 +55,7 @@ When calling the preprocessing script (in `data/preprocessing.py` or directly im
 Each client represents a building. The preprocessing script selects the following columns :
 ```
 date
-weather related columns (temp, rhum, wdir, wspd, and pres)
+weather related columns (temp, rhum, wdir, and wspd)
 energy targets (load_X and pv_X where X is the building id)
 ```
 The target variable depends on the chosen task : `target = load` or `target = pv` or `target = net`, where the target column will be renamed into `target`. 
@@ -87,7 +86,7 @@ This represents the energy that each building needs to draw from or feed back to
 The columns are reordered for improved readability and logical grouping:
 
 1. **Date-related columns** (`date`, `weekday`, `tod_sin`, `tod_cos`) - temporal information
-2. **Weather-related columns** (`temp`, `rhum`, `wspd`, `wdir`, `pres`) - exogenous variables
+2. **Weather-related columns** (`temp`, `rhum`, `wspd`, `wdir`) - exogenous variables
 3. **Energy-related columns** (`load`, `pv`, `net`) - target and related energy data
 
 This ordering ensures that temporal context comes first, followed by environmental factors, and finally the energy consumption data to be modeled.
