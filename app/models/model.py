@@ -15,18 +15,18 @@ class NormalMLP(nn.Module):
                  num_features: int = config.NUM_FEATURES,
                  hidden: int = 32,
                  dropout: float = .2,
-                 out_size: int = 1):
+                 out_size: int = 3):       # 3 outputs for load, pv and net
         
         super(NormalMLP, self).__init__()
         input_size: int = sequence_len * num_features
         self.net = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(input_size, hidden),
+            nn.Linear(input_size, hidden), # 48 * 7 = 336 > 32
             nn.ReLU(),
-            nn.Linear(hidden, hidden),
+            nn.Linear(hidden, hidden),     # 32 > 32
             nn.ReLU(),
             nn.Dropout(p = dropout),
-            nn.Linear(hidden, out_size)
+            nn.Linear(hidden, out_size)    # 32 > 3
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -40,7 +40,7 @@ class SoftGatedMoE(nn.Module):
                  expert_units: int = 8,
                  shared_units: int = 16,
                  dropout: float = .2,
-                 out_size: int = 1):
+                 out_size: int = 3):
         
         super(SoftGatedMoE, self).__init__()
         self.num_experts = num_experts
@@ -74,17 +74,17 @@ class SoftGatedMoE(nn.Module):
         return self.shared(mixed)
     
 # Method for fast check
-def fast_check():
-    N = 48
-    x = torch.randn(N, config.LOOKBACK, 8)
+def check_models():
+    N = 16
+    x = torch.randn(N, config.LOOKBACK, config.NUM_FEATURES)
     mlp = NormalMLP()
     moe = SoftGatedMoE()
 
     mlp_out = mlp(x)
     moe_out = moe(x)
 
-    assert mlp_out.shape == (N, 1), f"Expected MLP output shape (N, 1), got {mlp_out.shape}"
-    assert moe_out.shape == (N, 1), f"Expected MoE output shape (N, 1), got {moe_out.shape}"
+    assert mlp_out.shape == (N, 3), f"Expected MLP output shape (N, 1), got {mlp_out.shape}"
+    assert moe_out.shape == (N, 3), f"Expected MoE output shape (N, 1), got {moe_out.shape}"
 
     logger.info(f'Input: {tuple(x.shape)}')
     logger.info(f'MLP -> Output: {tuple(mlp_out.shape)}')

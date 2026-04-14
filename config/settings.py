@@ -17,7 +17,7 @@ class BaseConfig:
 
     # Data parameters
     LOOKBACK: int = 48
-    NUM_FEATURES: int = 8
+    NUM_FEATURES: int = 7 # weekday, tod_sin, tod_cos, temp, rhum, wspd, wdir
 
 def _get_config() -> BaseConfig:
     """
