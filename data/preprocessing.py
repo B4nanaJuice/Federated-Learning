@@ -21,7 +21,7 @@ def read_csv() -> pd.DataFrame:
 def preprocess_data(df: pd.DataFrame, building_id: int) -> pd.DataFrame:
     """
     Preprocesses the input DataFrame by selecting specific columns and returning a new DataFrame.
-    The columns selected include 'date', 'load_X', 'pv_X', 'temp', 'dwpt', 'rhum', 'wdir', 'wspd', and 'pres', where X is the building_id.
+    The columns selected include 'date', 'load_X', 'pv_X', 'temp', 'rhum', 'wdir', 'wspd', and 'pres', where X is the building_id.
 
     Args:
         df (pd.DataFrame): The input DataFrame to preprocess.
@@ -30,7 +30,7 @@ def preprocess_data(df: pd.DataFrame, building_id: int) -> pd.DataFrame:
     Returns:
         pd.DataFrame: A new DataFrame containing only the selected columns.
     """
-    columns_to_copy: list[str] = ['date', f'load_{building_id}', f'pv_{building_id}', 'temp', 'dwpt', 'rhum', 'wdir', 'wspd', 'pres']
+    columns_to_copy: list[str] = ['date', f'load_{building_id}', f'pv_{building_id}', 'temp', 'rhum', 'wdir', 'wspd', 'pres']
     new_df: pd.DataFrame = df[columns_to_copy].copy()
     new_df.rename(columns = {f'load_{building_id}': 'load', f'pv_{building_id}': 'pv'}, inplace = True)
     return new_df
@@ -111,13 +111,33 @@ def normalize_weather_data(df: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: A new DataFrame with the normalized weather-related columns.
     """
-    weather_columns: list[str] = ['temp', 'dwpt', 'rhum', 'wdir', 'wspd', 'pres']
+    weather_columns: list[str] = ['temp', 'rhum', 'wdir', 'wspd', 'pres']
     for col in weather_columns:
         mean_val: float = df[col].mean()
         std_val: float = df[col].std()
         if std_val != 0:
             df[col] = (df[col] - mean_val) / std_val
     return df
+
+def split_data(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """
+    Splits the input DataFrame into three separate DataFrames for training, validation, and testing.
+    The split is done chronologically without shuffling, with 70% of the data used for training, 20% for validation, and 10% for testing.
+
+    Args:
+        df (pd.DataFrame): The input DataFrame to split.
+
+    Returns:
+        tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]: A tuple containing the training, validation, and testing DataFrames.
+    """
+    train_size: int = int(0.7 * len(df))
+    val_size: int = int(0.2 * len(df))
+
+    train_df: pd.DataFrame = df.iloc[:train_size]
+    val_df: pd.DataFrame = df.iloc[train_size:train_size + val_size]
+    test_df: pd.DataFrame = df.iloc[train_size + val_size:]
+
+    return train_df, val_df, test_df
 
 def df_to_tensor(df: pd.DataFrame) -> torch.Tensor:
     """
