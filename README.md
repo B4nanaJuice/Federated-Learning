@@ -44,8 +44,8 @@ When calling the preprocessing script (in `data/preprocessing.py` or directly im
 3. Date preprocessing, by computing the weekday and the cyclic time of the day (`tod_sin` and `tod_cos`)
 4. Net consumption computation
 5. Column reordering, for easier readability
-6. Data normalization [TODO]
-7. Time-based data splitting (`train`, `validation` and `test`) [TODO]
+6. Data normalization
+7. Time-based data splitting (`train`, `validation` and `test`)
 8. Converting the object from a `pandas.DataFrame` to a `torch.Tensor`
 9. Saving the `torch.Tensor` into the `data/processed` directory
 <details>
