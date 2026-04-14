@@ -12,23 +12,24 @@ The dataset contains :
 | Variable | Description |
 |--------|-------------|
 | date | Timestamp of the measurement |
+| weekday | Day of the week From 0 (Monday) to 6 (Sunday) |
+| tod_sin | Cyclic encoding of the time of the day |
+| tod_cos | Cyclic encoding of the time of the day |
 
 ##### Weather variables
 Those variables are the same for each building.
 | Variable | Description |
 |----------|-------------|
-| weekday | Day of the week From 0 (Monday) to 6 (Sunday) |
-| tod_sin | Cyclic encoding of the time of the day |
-| tod_cos | Cyclic encoding of the time of the day |
 | temp | Temperature |
 | rhum | Relative humidity |
 | wspd | Wind speed |
 | wdir | Wind direction |
+| pres | Pressure |
 
 Those variables are called exogenous variables because they influence energy consumption but are not directly energy data.
 
 ##### Energy variables
-For each building (i)
+For each building (i) :
 | Variable | Description |
 |----------|-------------|
 | $load_{i}$ | Building's energy consumption |
