@@ -20,6 +20,8 @@ def run_preprocessing():
         df: pd.DataFrame = preprocessing.preprocess_date(df)
         df: pd.DataFrame = preprocessing.compute_net_consumption(df)
         df: pd.DataFrame = preprocessing.reorder_columns(df)
+        df: pd.DataFrame = preprocessing.normalize_energy_data(df)
+        df: pd.DataFrame = preprocessing.normalize_weather_data(df)
         tensor: torch.Tensor = preprocessing.df_to_tensor(df)
         output_file_name: str = f'building_{building_id}'
         preprocessing.save_tensor(tensor, output_file_name)

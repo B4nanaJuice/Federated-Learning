@@ -81,6 +81,44 @@ def reorder_columns(df: pd.DataFrame) -> pd.DataFrame:
     desired_order: list[str] = ['weekday', 'tod_sin', 'tod_cos', 'temp', 'rhum', 'wspd', 'wdir', 'pres', 'load', 'pv', 'net']
     return df[desired_order]
 
+def normalize_energy_data(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Normalizes the 'load', 'pv', and 'net' columns in the input DataFrame using min-max normalization.
+    The formula used for normalization is: (x - min) / (max - min), where min and max are the minimum and maximum values of the respective column.
+
+    Args:
+        df (pd.DataFrame): The input DataFrame containing 'load', 'pv', and 'net' columns to normalize.
+
+    Returns:
+        pd.DataFrame: A new DataFrame with the normalized columns.
+    """
+    columns_to_normalize: list[str] = ['load', 'pv', 'net']
+    for col in columns_to_normalize:
+        min_val: float = df[col].min()
+        max_val: float = df[col].max()
+        if max_val != min_val:
+            df[col] = (df[col] - min_val) / (max_val - min_val)
+    return df
+
+def normalize_weather_data(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Normalizes the weather-related columns in the input DataFrame using standardization (z-score normalization).
+    The formula used for normalization is: (x - mean) / std, where mean and std are the mean and standard deviation of the respective column.
+
+    Args:
+        df (pd.DataFrame): The input DataFrame containing weather-related columns to normalize.
+
+    Returns:
+        pd.DataFrame: A new DataFrame with the normalized weather-related columns.
+    """
+    weather_columns: list[str] = ['temp', 'dwpt', 'rhum', 'wdir', 'wspd', 'pres']
+    for col in weather_columns:
+        mean_val: float = df[col].mean()
+        std_val: float = df[col].std()
+        if std_val != 0:
+            df[col] = (df[col] - mean_val) / std_val
+    return df
+
 def df_to_tensor(df: pd.DataFrame) -> torch.Tensor:
     """
     Converts a given pandas DataFrame to a PyTorch tensor.
