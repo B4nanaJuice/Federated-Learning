@@ -28,3 +28,6 @@ def simulate():
     # Run the server
     aggregation_server.run(client_fraction = config.SIM_CLIENTS_FRACTION)
 
+    # Plot data
+    aggregation_server.plot_data()
+

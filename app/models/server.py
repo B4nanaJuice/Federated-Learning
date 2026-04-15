@@ -4,6 +4,7 @@ import torch
 import threading
 import numpy as np
 import torch.nn as nn
+from tqdm import tqdm
 from typing import Optional, Callable, Dict, List
 import matplotlib.pyplot as plt
 
@@ -115,19 +116,19 @@ class Server:
         return aggregated_delta
 
     def run(self, client_fraction: float = 1.0) -> None:
-        for round in range(1, self.max_rounds + 1):
-            logger.info(f'Round {round}/{self.max_rounds}')
+        for round in tqdm(range(1, self.max_rounds + 1), desc = 'Round'):
+            # logger.info(f'Round {round}/{self.max_rounds}')
             self.select_clients(client_fraction)
             self.broadcast()
             self.collect_updates()
             self.aggregate()
 
-            logger.info(f'Active clients: {len(self.selected_clients)}')
-            logger.info(f'Participation rate: {self.participation_rate:.0%}')
+            # logger.info(f'Active clients: {len(self.selected_clients)}')
+            # logger.info(f'Participation rate: {self.participation_rate:.0%}')
 
             if round % 10 == 0:
                 self.save_checkpoint()
-                logger.info(f'Saved checkpoing model (round {round})')
+                # logger.info(f'Saved checkpoing model (round {round})')
 
         return
     
@@ -147,9 +148,9 @@ def check_server():
     logger.info('Starting server check')
 
     from app.models.model import NormalMLP
-    server: Server = Server(global_model = NormalMLP(), max_rounds = 30)
+    server: Server = Server(global_model = NormalMLP(), max_rounds = 5)
     for i in range(1, 4):
-        server.register_client(Client(client_id = i, model = NormalMLP(), batch_size = 128, local_epochs = 5))
+        server.register_client(Client(client_id = i, model = NormalMLP(), batch_size = 128, local_epochs = 15))
     server.run()
 
     server.plot_data()

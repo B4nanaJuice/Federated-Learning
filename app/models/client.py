@@ -3,6 +3,7 @@ import copy
 import time
 import torch
 import torch.nn as nn
+from tqdm import tqdm
 from typing import Optional, Dict
 
 from app.models.dataloader import EnergyDataset
@@ -59,8 +60,8 @@ class Client:
         weights_before: Dict[int, torch.Tensor] = copy.deepcopy(self.model.state_dict())
 
         self.model.train()
-        for _ in range(self.local_epochs):
-            logger.info(f'Client {self.client_id} - Epoch {_+1}/{self.local_epochs}')
+        for _ in tqdm(range(self.local_epochs), desc = f'Client {self.client_id:2d}'):
+            # logger.info(f'Client {self.client_id} - Epoch {_+1}/{self.local_epochs}')
             epoch_loss: float = 0.0
             for batch in range(len(self.dataset) // self.batch_size + 1):
                 # Get batch data
@@ -79,7 +80,7 @@ class Client:
                 self.optimizer.step()
 
             self.train_loss = epoch_loss / self.num_samples
-            logger.info(f'Client {self.client_id} - Epoch training loss: {self.train_loss}')
+            # logger.info(f'Client {self.client_id} - Epoch training loss: {self.train_loss}')
 
         weights_after: Dict[int, torch.Tensor] = copy.deepcopy(self.model.state_dict())
         self.delta_weights = {
