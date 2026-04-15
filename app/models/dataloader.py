@@ -22,7 +22,7 @@ class EnergyDataset(Dataset):
         elif type(idx) == slice:
             start, stop, step = idx.indices(len(self))
             x = torch.stack([self.x[i:i + self.lookback] for i in range(start, stop, step)])
-            y = torch.stack([self.y[i:i + self.lookback] for i in range(start, stop, step)])
+            y = torch.stack([self.y[i + self.lookback] for i in range(start, stop, step)])
         return x, y
     
 # Method for testing the dataset
@@ -34,10 +34,10 @@ def check_dataset():
 
     assert len(dataset) == features.shape[0] - config.LOOKBACK + 1, f"Expected dataset length {features.shape[0] - config.LOOKBACK + 1}, got {len(dataset)}"
     # Test if can get multiple items without error
-    x, y = dataset[:3]
-    assert x.shape == (3, config.LOOKBACK, config.NUM_FEATURES), f"Expected x shape (3, LOOKBACK, NUM_FEATURES), got {x.shape}"
-    assert y.shape == (3, config.LOOKBACK, 3), f"Expected y shape (3, LOOKBACK, 3), got {y.shape}"
+    x, y = dataset[:6]
+    assert x.shape == (6, config.LOOKBACK, config.NUM_FEATURES), f"Expected x shape (3, LOOKBACK, NUM_FEATURES), got {x.shape}"
+    assert y.shape == (6, 3), f"Expected y shape (3, 3), got {y.shape}"
 
     logger.info(f'Dataset: {len(dataset)} samples')
     logger.info(f'dataset[0] -> x shape: {dataset[0][0].shape}, y shape: {dataset[0][1].shape}')
-    logger.info(f'dataset[:3] -> x shape: {x.shape}, y shape: {y.shape}')
+    logger.info(f'dataset[:6] -> x shape: {x.shape}, y shape: {y.shape}')
