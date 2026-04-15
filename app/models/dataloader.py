@@ -27,6 +27,8 @@ class EnergyDataset(Dataset):
     
 # Method for testing the dataset
 def check_dataset():
+    logger.info('Starting dataloader check')
+
     tensor: torch.Tensor = torch.load('data/processed/train/building_1.pt')
     features: torch.Tensor = tensor[:, :-3]
     targets: torch.Tensor = tensor[:, -3:]
@@ -41,3 +43,5 @@ def check_dataset():
     logger.info(f'Dataset: {len(dataset)} samples')
     logger.info(f'dataset[0] -> x shape: {dataset[0][0].shape}, y shape: {dataset[0][1].shape}')
     logger.info(f'dataset[:6] -> x shape: {x.shape}, y shape: {y.shape}')
+
+    logger.info('Dataloader check ended successfully')

@@ -57,8 +57,6 @@ class Client:
     def train_local(self) -> None:
         t0: float = time.time()
         weights_before: Dict[int, torch.Tensor] = copy.deepcopy(self.model.state_dict())
-        
-        self.model = SoftGatedMoE()
 
         self.model.train()
         for _ in range(self.local_epochs):
@@ -73,11 +71,8 @@ class Client:
                 # Forward pass
                 self.optimizer.zero_grad()
                 predictions: torch.Tensor = self.model(x_batch)
-                assert not torch.isnan(predictions).any().item(), 'Predictions contain NaN'
                 loss: torch.Tensor = self.loss_function(predictions, y_batch)
                 epoch_loss += loss.item() * len(x_batch)
-                logger.debug(f'loss: {loss}')
-                logger.debug(f'Loss item: {loss.item()}, len(x_batch): {len(x_batch)}, epoch_loss: {epoch_loss}')
 
                 # Backward pass
                 loss.backward()
@@ -109,7 +104,10 @@ class Client:
 
 # Method to check if client's training works
 def check_client():
-    client: Client = Client(client_id = 1)
+    logger.info('Starting client check')
+
+    client: Client = Client(client_id = 1, batch_size = 64)
     client.train_local()
 
     logger.info(f'Model training time: {client.compute_time:.1f}s')
+    logger.info('Client check ended successfully')

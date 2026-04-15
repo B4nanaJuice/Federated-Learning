@@ -75,6 +75,8 @@ class SoftGatedMoE(nn.Module):
     
 # Method for fast check
 def check_models():
+    logger.info('Starting model check')
+
     N = 16
     x = torch.randn(N, config.LOOKBACK, config.NUM_FEATURES)
     mlp = NormalMLP()
@@ -93,3 +95,5 @@ def check_models():
     n_mlp = sum(p.numel() for p in mlp.parameters())
     n_moe = sum(p.numel() for p in moe.parameters())
     logger.info(f'parameters: MLP: {n_mlp}, MoE: {n_moe}')
+
+    logger.info('Model check ended successfully')
