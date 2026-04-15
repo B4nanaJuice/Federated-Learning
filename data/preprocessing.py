@@ -81,6 +81,18 @@ def reorder_columns(df: pd.DataFrame) -> pd.DataFrame:
     desired_order: list[str] = ['weekday', 'tod_sin', 'tod_cos', 'temp', 'rhum', 'wspd', 'wdir', 'load', 'pv', 'net']
     return df[desired_order]
 
+def replace_nan_values(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Replaces all NaN values in the input DataFrame with 0.
+
+    Args:
+        df (pd.DataFrame): The input DataFrame containing NaN values to replace.
+
+    Returns:
+        pd.DataFrame: A new DataFrame with all NaN values replaced by 0.
+    """
+    return df.fillna(0)
+
 def normalize_energy_data(df: pd.DataFrame) -> pd.DataFrame:
     """
     Normalizes the 'load', 'pv', and 'net' columns in the input DataFrame using min-max normalization.
