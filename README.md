@@ -1,6 +1,80 @@
 # Tests on attacking and defending centralized machine learning
 ---
 ## 📑 Project overview
+This project is dedicated to testing attack and defense mechanisms for federated learning systems in the context of smart grid energy forecasting. The federated learning framework keeps sensitive building-level energy data local while enabling collaborative model training—however, the training process remains vulnerable to various attacks including data poisoning, model inversion, and Byzantine failures.
+
+**Project Status**: 🚧 Early Development
+
+The project is currently in its early stages. The foundational data preprocessing pipeline and project structure are in place, but significant work remains to fully implement and validate attack and defense mechanisms.
+
+### 📋 Development Roadmap
+
+- [ ] **Attack Mechanisms Implementation**
+    - [ ] Data poisoning attack module
+    - [ ] Byzantine attack implementation
+    
+- [ ] **Defense Strategies**
+    - [ ] Anomaly detection for poisoned updates
+    - [ ] Scoring method for clients and server
+    - [ ] Degraded federated learning mode
+    
+- [x] **Federated Learning Core**
+    - [x] Complete server-client communication protocol
+    - [x] Model update aggregation logic
+    - [x] Round-based training loop
+    
+- [ ] **Testing & Evaluation**
+    - [ ] Comprehensive test suite for attacks
+    - [ ] Defense mechanism validation
+    - [ ] Performance benchmarking
+    
+- [ ] **Documentation**
+    - [ ] API documentation
+    - [ ] Usage examples and tutorials
+    - [ ] Results and findings report
+
+### Context: Smart Grids and Energy Forecasting
+Smart grids integrate distributed energy resources, IoT sensors, and machine learning to optimize energy distribution. Building-level energy consumption and photovoltaic production forecasting is critical for grid stability and efficient resource allocation. Each building (client) generates sensitive consumption data that reveals occupancy patterns and behavior, making data privacy a primary concern.
+
+### Why Test Defense Mechanisms?
+Federated learning preserves privacy by keeping data local, but the training process remains vulnerable to:
+- **Data poisoning attacks**: Malicious clients inject corrupted data to compromise model quality
+- **Byzantine failures**: Compromised clients send adversarial gradients
+
+Testing robust defense mechanisms ensures the system maintains both **model accuracy** and **data privacy** under realistic threat scenarios.
+
+### Project Structure
+```
+Federated-Learning/
+├── app/
+│   └── models/
+│       ├── client.py       # Class for federated client
+│       ├── dataloader.py   # Dataloader class for data splitting and batchs 
+│       ├── model.py        # ML models creation
+│       └── server.py       # Class for centralized server
+├── config/
+│   ├── logger.py           # Configuration for a logger
+│   └── settings.py         # Project configuration
+├── data/
+│   ├── input/              # Input dataset in CSV format
+│   ├── processed/          # Preprocessed data
+│   │   ├── train/
+│   │   │   └── building_*.pt
+│   │   ├── val/
+│   │   │   └── building_*.pt
+│   │   └── test/
+│   │       └── building_*.pt
+│   └── preprocessing.py    # Methods for preprocessing raw data
+├── README.md
+├── requirements.txt        # Libraries requirement for the project
+└── run.py                  # Entry point for simulations, checks and data preprocessing
+```
+
+**Key directories:**
+- **app/**: Core implementation including ML models, client and server model
+- **config/**: Configuration for the project and logger
+- **data/**: Raw input datasets, preprocessing logic, and processed tensors organized by train/val/test splits
+- **Root files**: Project configuration and entry points
 ---
 ## 📚 Data preprocessing phase
 ### Dataset structure
@@ -44,10 +118,11 @@ When calling the preprocessing script (in `data/preprocessing.py` or directly im
 3. Date preprocessing, by computing the weekday and the cyclic time of the day (`tod_sin` and `tod_cos`)
 4. Net consumption computation
 5. Column reordering, for easier readability
-6. Data normalization
-7. Time-based data splitting (`train`, `validation` and `test`)
-8. Converting the object from a `pandas.DataFrame` to a `torch.Tensor`
-9. Saving the `torch.Tensor` into the `data/processed` directory
+6. Data sanitazing, to replace NaN values by 0
+7. Data normalization
+8. Time-based data splitting (`train`, `validation` and `test`)
+9. Converting the object from a `pandas.DataFrame` to a `torch.Tensor`
+10. Saving the `torch.Tensor` into the `data/processed` directory
 <details>
 <summary>See more about the preprocessing pipeline</summary>
 
@@ -90,6 +165,15 @@ The columns are reordered for improved readability and logical grouping:
 3. **Energy-related columns** (`load`, `pv`, `net`) - target and related energy data
 
 This ordering ensures that temporal context comes first, followed by environmental factors, and finally the energy consumption data to be modeled.
+
+#### Data sanitizing
+NaN values in the dataset are replaced with 0. This approach is well-suited for energy data because:
+
+- **Missing energy measurements**: A NaN value for energy consumption or production is treated as zero energy, representing periods where no data was recorded or equipment was inactive
+- **Weather variables**: Missing weather readings are set to 0, which serves as a neutral baseline that doesn't artificially bias the model toward extreme values
+- **Consistency with domain logic**: In energy systems, missing data during low-activity periods is reasonably approximated as zero consumption/production rather than being omitted, which could create gaps in the time series and break temporal continuity
+
+This strategy preserves the sequential nature of the data while handling missing values in a physically interpretable way.
 
 #### Data normalization
 In order to stabilize the training process, data is normalized. Two methods are used here :
@@ -145,6 +229,3 @@ These `.pt` files can be directly loaded during model training and testing using
 
 ---
 ## 📥 Installation guide
----
-
-[Ctrl+ K V] pour l'overview
