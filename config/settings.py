@@ -19,6 +19,14 @@ class BaseConfig:
     LOOKBACK: int = 48
     NUM_FEATURES: int = 7 # weekday, tod_sin, tod_cos, temp, rhum, wspd, wdir
 
+    # Simulation parameters
+    SIM_MAX_ROUNDS: int = 20
+    SIM_MIN_CLIENTS: int = 10
+    SIM_BATCH_SIZE: int = 16
+    SIM_LEARNING_RATE: float = 1e-3
+    SIM_LOCAL_EPOCHS: int = 20
+    SIM_CLIENTS_FRACTION: float = 0.5
+
 def _get_config() -> BaseConfig:
     """
     Get config for the current environment.
