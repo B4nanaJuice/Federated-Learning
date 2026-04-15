@@ -31,6 +31,7 @@ def run_preprocessing():
         df: pd.DataFrame = preprocessing.preprocess_date(df)
         df: pd.DataFrame = preprocessing.compute_net_consumption(df)
         df: pd.DataFrame = preprocessing.reorder_columns(df)
+        df: pd.DataFrame = preprocessing.replace_nan_values(df)
         df: pd.DataFrame = preprocessing.normalize_energy_data(df)
         df: pd.DataFrame = preprocessing.normalize_weather_data(df)
 
