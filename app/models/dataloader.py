@@ -22,7 +22,7 @@ class EnergyDataset(Dataset):
         elif type(idx) == slice:
             start, stop, step = idx.indices(len(self))
             x = torch.stack([self.x[i:i + self.lookback] for i in range(start, stop, step)])
-            y = torch.stack([self.y[i + self.lookback] for i in range(start, stop, step)])
+            y = torch.stack([self.y[i + self.lookback - 1] for i in range(start, stop, step)])
         return x, y
     
 # Method for testing the dataset
