@@ -1,6 +1,7 @@
 # Imports
 import copy
 import torch
+import threading
 import torch.nn as nn
 from typing import Optional, Callable, Dict, List
 
@@ -61,8 +62,14 @@ class Server:
     
     def collect_updates(self) -> None:
         self.received_updates = []
+        threads: List[threading.Thread] = []
         for client in self.selected_clients:
-            client.train_local()
+            threads.append(threading.Thread(target = client.train_local))
+
+        [t.start() for t in threads]
+        [t.join() for t in threads]
+
+        for client in self.selected_clients:
             update = client.send_update()
             self.received_updates.append(update)
             self.client_weights[client.client_id] = 1/len(self.selected_clients)

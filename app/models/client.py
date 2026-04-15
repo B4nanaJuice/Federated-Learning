@@ -79,7 +79,7 @@ class Client:
                 self.optimizer.step()
 
             self.train_loss = epoch_loss / self.num_samples
-            logger.info(f'Epoch training loss: {self.train_loss}')
+            logger.info(f'Client {self.client_id} - Epoch training loss: {self.train_loss}')
 
         weights_after: Dict[int, torch.Tensor] = copy.deepcopy(self.model.state_dict())
         self.delta_weights = {
