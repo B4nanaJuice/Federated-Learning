@@ -1,7 +1,7 @@
 # Tests on attacking and defending centralized machine learning
 ---
 ## 📑 Project overview
-This project is dedicated to testing attack and defense mechanisms for federated learning systems in the context of smart grid energy forecasting. The federated learning framework keeps sensitive building-level energy data local while enabling collaborative model training—however, the training process remains vulnerable to various attacks including data poisoning, model inversion, and Byzantine failures.
+This project is dedicated to testing attack and defense mechanisms for federated learning systems in the context of smart grid energy forecasting. The federated learning framework keeps sensitive building-level energy data local while enabling collaborative model training. However, the training process remains vulnerable to various attacks including data poisoning, model inversion, and Byzantine failures.
 
 **Project Status**: 🚧 Early Development
 
