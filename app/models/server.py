@@ -2,8 +2,10 @@
 import copy
 import torch
 import threading
+import numpy as np
 import torch.nn as nn
 from typing import Optional, Callable, Dict, List
+import matplotlib.pyplot as plt
 
 from app.models.client import Client
 from config import create_logger
@@ -41,6 +43,7 @@ class Server:
         # Global metrics
         self.global_val_loss: float = float('inf')
         self.participation_rate: float = 0.0
+        self.training_loss: List[List[float]] = []
 
     def register_client(self, client: Client) -> None:
         self.client_registry[client.client_id] = client
@@ -69,10 +72,13 @@ class Server:
         [t.start() for t in threads]
         [t.join() for t in threads]
 
+        training_loss: List[float] = []
         for client in self.selected_clients:
             update = client.send_update()
+            training_loss.append(update.get('train_loss'))
             self.received_updates.append(update)
             self.client_weights[client.client_id] = 1/len(self.selected_clients)
+        self.training_loss.append(training_loss)
 
     def aggregate(self) -> None:
         if len(self.received_updates) < self.min_clients:
@@ -122,16 +128,30 @@ class Server:
             if round % 10 == 0:
                 self.save_checkpoint()
                 logger.info(f'Saved checkpoing model (round {round})')
-        
+
         return
+    
+    def plot_data(self) -> None:
+        # Plot loss
+        x = np.linspace(1, self.max_rounds, self.max_rounds)
+        min_loss = [min(_) for _ in self.training_loss]
+        max_loss = [max(_) for _ in self.training_loss]
+        mean_loss = [sum(_)/len(_) for _ in self.training_loss]
+
+        plt.fill_between(x, min_loss, max_loss, color = '#89abcd')
+        plt.plot(x, mean_loss)
+
+        plt.show()
 
 def check_server():
     logger.info('Starting server check')
 
     from app.models.model import NormalMLP
-    server: Server = Server(global_model = NormalMLP(), max_rounds = 3)
+    server: Server = Server(global_model = NormalMLP(), max_rounds = 30)
     for i in range(1, 4):
-        server.register_client(Client(client_id = i, model = NormalMLP(), batch_size = 64, local_epochs = 3))
+        server.register_client(Client(client_id = i, model = NormalMLP(), batch_size = 128, local_epochs = 5))
     server.run()
+
+    server.plot_data()
     
     logger.info('Server check ended successfully')
