@@ -19,7 +19,7 @@ def create_logger(name: str,
     """
     
     root_logger = logging.getLogger(name)
-    root_logger.setLevel(logging.INFO)
+    root_logger.setLevel(logging.DEBUG)
 
     log_file = f'{log_path}/{file_name() if callable(file_name) else file_name}.log'
     # Create file if it doesn't exist
