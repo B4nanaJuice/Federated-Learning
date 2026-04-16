@@ -59,6 +59,8 @@ class Client:
         t0: float = time.time()
         weights_before: Dict[int, torch.Tensor] = copy.deepcopy(self.model.state_dict())
 
+        device: str = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.model = self.model.to(device = device)
         self.model.train()
         for _ in tqdm(range(self.local_epochs), desc = f'Client {self.client_id:2d}'):
             # logger.info(f'Client {self.client_id} - Epoch {_+1}/{self.local_epochs}')
@@ -68,6 +70,8 @@ class Client:
                 start_idx: int = batch * self.batch_size
                 end_idx: int = min((batch + 1) * self.batch_size, len(self.dataset))
                 x_batch, y_batch = self.dataset[start_idx:end_idx]
+                # Move batches to device (GPU if available)
+                x_batch, y_batch = x_batch.to(device = device), y_batch.to(device = device)
 
                 # Forward pass
                 self.optimizer.zero_grad()

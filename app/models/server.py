@@ -9,6 +9,7 @@ from typing import Optional, Callable, Dict, List
 import matplotlib.pyplot as plt
 
 from app.models.client import Client
+from app.models.dataloader import EnergyDataset
 from config import create_logger
 
 logger = create_logger(__name__)
@@ -35,7 +36,7 @@ class Server:
         # Global model
         self.global_model: nn.Module = global_model
         self.aggregation_function: Callable = aggregation_function or self._fedavg
-        self.model_checkpoint = copy.deepcopy(global_model.state_dict())
+        self.model_checkpoint: Dict[str, torch.Tensor] = copy.deepcopy(global_model.state_dict())
 
         # Model exchange
         self.received_updates: List[Dict] = []
@@ -45,6 +46,9 @@ class Server:
         self.global_val_loss: float = float('inf')
         self.participation_rate: float = 0.0
         self.training_loss: List[List[float]] = []
+
+        # Validation phase
+        self.validation_predictions: Dict = {}
 
     def register_client(self, client: Client) -> None:
         self.client_registry[client.client_id] = client
@@ -97,7 +101,7 @@ class Server:
         return
     
     def load_checkpoint(self) -> None:
-        self.global_model.load_state_dict(self.model_checkpoint)
+        self.global_model.load_state_dict(copy.deepcopy(self.model_checkpoint))
         return
     
     @staticmethod
@@ -198,16 +202,18 @@ class Server:
 
         plt.show()
 
+        return
+
 def check_server():
     logger.info('Starting server check')
 
-    from app.models.model import NormalMLP
-    server: Server = Server(global_model = NormalMLP(), max_rounds = 5)
+    from app.models.model import NormalMLP, SoftGatedMoE
+    server: Server = Server(global_model = NormalMLP(), max_rounds = 1)
     for i in range(1, 4):
-        server.register_client(Client(client_id = i, model = NormalMLP(), batch_size = 128, local_epochs = 15))
+        server.register_client(Client(client_id = i, model = NormalMLP(), batch_size = 64, local_epochs = 30))
     server.run()
 
-    server.plot_data()
     server.validate(validation_dataset_index = 18)
+    # server.plot_data()
     
     logger.info('Server check ended successfully')
