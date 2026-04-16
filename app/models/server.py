@@ -132,6 +132,60 @@ class Server:
 
         return
     
+    def validate(self, validation_dataset_index: int = 1) -> None:
+        
+        device: str = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.global_model = self.global_model.to(device = device)
+        self.global_model.eval()
+
+        # Get data
+        _tensor: torch.Tensor = torch.load(f'data/processed/val/building_{validation_dataset_index}.pt')
+        features: torch.Tensor = _tensor[:, :-3]
+        targets: torch.Tensor = _tensor[:, -3:]
+        dataset: EnergyDataset = EnergyDataset(features, targets)
+
+        with torch.no_grad():
+            features, targets = dataset[:]
+            features = features.to(device = device)
+            targets = targets.to(device = device)
+
+            predictions: torch.Tensor = self.global_model(features)
+
+            self.validation_predictions = {
+                'load': predictions[:, 0],
+                'pv': predictions[:, 1],
+                'net': predictions[:, 2]
+            }
+
+        mse: Dict = {
+            'load': np.square(np.subtract(self.validation_predictions['load'], targets[:, 0])).mean(),
+            'pv': np.square(np.subtract(self.validation_predictions['pv'], targets[:, 1])).mean(),
+            'net': np.square(np.subtract(self.validation_predictions['net'], targets[:, 2])).mean()
+        }
+
+        logger.debug(f'MSE load: {mse['load']:.4f}, pv: {mse['pv']:.4f}, net: {mse['net']:.4f}')
+
+        # print(server.validation_predictions)
+        _len = len(dataset)
+        x = np.linspace(1, _len, _len)
+
+        fig, (ax1, ax2, ax3) = plt.subplots(3, 1)
+
+        ax1.plot(x, targets[:, 0], label = 'load_true')
+        ax2.plot(x, targets[:, 1], label = 'pv_true')
+        ax3.plot(x, targets[:, 2], label = 'net_true')
+
+        ax1.plot(x, self.validation_predictions['load'], label = 'load')
+        ax2.plot(x, self.validation_predictions['pv'], label = 'pv')
+        ax3.plot(x, self.validation_predictions['net'], label = 'net')
+
+        ax1.legend()
+        ax2.legend()
+        ax3.legend()
+        plt.show()
+
+        return
+    
     def plot_data(self) -> None:
         # Plot loss
         x = np.linspace(1, self.max_rounds, self.max_rounds)
@@ -154,5 +208,6 @@ def check_server():
     server.run()
 
     server.plot_data()
+    server.validate(validation_dataset_index = 18)
     
     logger.info('Server check ended successfully')
