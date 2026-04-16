@@ -7,6 +7,7 @@ import torch.nn as nn
 from tqdm import tqdm
 from typing import Optional, Callable, Dict, List
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 
 from app.models.client import Client
 from app.models.dataloader import EnergyDataset
@@ -43,12 +44,12 @@ class Server:
         self.broadcast_model: Optional[Dict[str, torch.Tensor]] = None
 
         # Global metrics
-        self.global_val_loss: float = float('inf')
         self.participation_rate: float = 0.0
         self.training_loss: List[List[float]] = []
 
         # Validation phase
         self.validation_predictions: Dict = {}
+        self.validation_MSE: Dict = {}
 
     def register_client(self, client: Client) -> None:
         self.client_registry[client.client_id] = client
@@ -89,7 +90,6 @@ class Server:
         if len(self.received_updates) < self.min_clients:
             raise Exception('Number of minimum models not reached')
         
-        # weights_before = copy.deepcopy(self.global_model.state_dict())
         new_state = self.aggregation_function(self.received_updates, self.client_weights)
         self.global_model.load_state_dict(new_state)
 
@@ -106,7 +106,7 @@ class Server:
     
     @staticmethod
     def _fedavg(updates: List[Dict], weights: Dict[str, float]) -> Dict[str, torch.Tensor]:
-        aggregated_delta: Dict[str, torch.Tensor] = {}
+        aggregated: Dict[str, torch.Tensor] = {}
 
         for update in updates:
             client_id = update.get('client_id')
@@ -121,99 +121,114 @@ class Server:
 
     def run(self, client_fraction: float = 1.0) -> None:
         for round in tqdm(range(1, self.max_rounds + 1), desc = 'Round'):
-            # logger.info(f'Round {round}/{self.max_rounds}')
             self.select_clients(client_fraction)
             self.broadcast()
             self.collect_updates()
             self.aggregate()
 
-            # logger.info(f'Active clients: {len(self.selected_clients)}')
-            # logger.info(f'Participation rate: {self.participation_rate:.0%}')
-
             if round % 10 == 0:
                 self.save_checkpoint()
-                # logger.info(f'Saved checkpoing model (round {round})')
 
         return
     
-    def validate(self, validation_dataset_index: int = 1) -> None:
-        
+    def run_validation(self, dataset_index: int = 1, days_count: int = 10) -> None:
+
         device: str = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.global_model = self.global_model.to(device = device)
         self.global_model.eval()
 
         # Get data
-        _tensor: torch.Tensor = torch.load(f'data/processed/val/building_{validation_dataset_index}.pt')
+        _tensor: torch.Tensor = torch.load(f'data/processed/val/building_{dataset_index}.pt')
         features: torch.Tensor = _tensor[:, :-3]
         targets: torch.Tensor = _tensor[:, -3:]
         dataset: EnergyDataset = EnergyDataset(features, targets)
 
         with torch.no_grad():
-            features, targets = dataset[:]
+            features, targets = dataset[:days_count*48]
             features = features.to(device = device)
             targets = targets.to(device = device)
 
             predictions: torch.Tensor = self.global_model(features)
 
+            # Save load, pv and net predictions
             self.validation_predictions = {
                 'load': predictions[:, 0],
                 'pv': predictions[:, 1],
-                'net': predictions[:, 2]
+                'net': predictions[:, 2],
+                'load_true': targets[:, 0],
+                'pv_true': targets[:, 1],
+                'net_true': targets[:, 2],
             }
 
-        mse: Dict = {
-            'load': np.square(np.subtract(self.validation_predictions['load'], targets[:, 0])).mean(),
-            'pv': np.square(np.subtract(self.validation_predictions['pv'], targets[:, 1])).mean(),
-            'net': np.square(np.subtract(self.validation_predictions['net'], targets[:, 2])).mean()
+        # Compute MSE for load, pv and net consumption
+        self.validation_MSE = {
+            'load': np.square(np.subtract(predictions[:, 0], targets[:, 0])).mean(),
+            'pv': np.square(np.subtract(predictions[:, 1], targets[:, 1])).mean(),
+            'net': np.square(np.subtract(predictions[:, 2], targets[:, 2])).mean()
         }
-
-        logger.debug(f'MSE load: {mse['load']:.4f}, pv: {mse['pv']:.4f}, net: {mse['net']:.4f}')
-
-        # print(server.validation_predictions)
-        _len = len(dataset)
-        x = np.linspace(1, _len, _len)
-
-        fig, (ax1, ax2, ax3) = plt.subplots(3, 1)
-
-        ax1.plot(x, targets[:, 0], label = 'load_true')
-        ax2.plot(x, targets[:, 1], label = 'pv_true')
-        ax3.plot(x, targets[:, 2], label = 'net_true')
-
-        ax1.plot(x, self.validation_predictions['load'], label = 'load')
-        ax2.plot(x, self.validation_predictions['pv'], label = 'pv')
-        ax3.plot(x, self.validation_predictions['net'], label = 'net')
-
-        ax1.legend()
-        ax2.legend()
-        ax3.legend()
-        plt.show()
 
         return
     
-    def plot_data(self) -> None:
-        # Plot loss
-        x = np.linspace(1, self.max_rounds, self.max_rounds)
-        min_loss = [min(_) for _ in self.training_loss]
-        max_loss = [max(_) for _ in self.training_loss]
-        mean_loss = [sum(_)/len(_) for _ in self.training_loss]
+    def plot(self, show_loss: bool = True, show_validation: bool = True) -> None:
+        # Generate layout from show_* options
+        fig = plt.figure()
+        gs = mpl.gridspec.GridSpec(3, 2, wspace = 0.25, hspace = 0.25)
 
-        plt.fill_between(x, min_loss, max_loss, color = '#89abcd')
-        plt.plot(x, mean_loss)
+        if show_loss:
+            loss_plot = fig.add_subplot(gs[:, 1])
+            if not show_validation:
+                loss_plot = fig.add_subplot(gs[:, :])
+
+            x = np.linspace(1, self.max_rounds, self.max_rounds)
+            min_loss = [min(_) for _ in self.training_loss]
+            max_loss = [max(_) for _ in self.training_loss]
+            mean_loss = [sum(_)/len(_) for _ in self.training_loss]
+
+            loss_plot.fill_between(x, min_loss, max_loss, color = '#89abcd')
+            loss_plot.plot(x, min_loss, '--', label = 'Minimum loss')
+            loss_plot.plot(x, max_loss, '--', label = 'Maximum loss')
+            loss_plot.plot(x, mean_loss, label = 'Average loss')
+            loss_plot.legend()
+
+        if show_validation:
+            load_plot = fig.add_subplot(gs[0, 0])
+            pv_plot = fig.add_subplot(gs[1, 0])
+            net_plot = fig.add_subplot(gs[2, 0])
+            if not show_loss:
+                load_plot = fig.add_subplot(gs[0, :])
+                pv_plot = fig.add_subplot(gs[1, :])
+                net_plot = fig.add_subplot(gs[2, :])
+            
+            _len: int = len(self.validation_predictions['load'])
+            x = np.linspace(1, _len, _len)
+
+            load_plot.plot(x, self.validation_predictions['load_true'], label = 'load truth')
+            pv_plot.plot(x, self.validation_predictions['pv_true'], label = 'pv truth')
+            net_plot.plot(x, self.validation_predictions['net_true'], label = 'net truth')
+
+            load_plot.plot(x, self.validation_predictions['load'], label = 'load prediction')
+            pv_plot.plot(x, self.validation_predictions['pv'], label = 'pv prediction')
+            net_plot.plot(x, self.validation_predictions['net'], label = 'net prediction')
+
+            load_plot.legend()
+            pv_plot.legend()
+            net_plot.legend()
 
         plt.show()
-
-        return
 
 def check_server():
     logger.info('Starting server check')
 
-    from app.models.model import NormalMLP, SoftGatedMoE
-    server: Server = Server(global_model = NormalMLP(), max_rounds = 1)
+    from app.models.model import NormalMLP
+    server: Server = Server(global_model = NormalMLP(), max_rounds = 2)
     for i in range(1, 4):
-        server.register_client(Client(client_id = i, model = NormalMLP(), batch_size = 64, local_epochs = 30))
+        server.register_client(Client(client_id = i, model = NormalMLP(), batch_size = 128, local_epochs = 3))
     server.run()
 
-    server.validate(validation_dataset_index = 18)
-    # server.plot_data()
+    logger.info(f'Starting validation phase')
+    server.run_validation(dataset_index = 5, days_count = 5)
+    server.plot()
+    server.plot(show_loss = False)
+    server.plot(show_validation = False)
     
     logger.info('Server check ended successfully')

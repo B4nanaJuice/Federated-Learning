@@ -27,6 +27,7 @@ The project is currently in its early stages. The foundational data preprocessin
     - [ ] Comprehensive test suite for attacks
     - [ ] Defense mechanism validation
     - [ ] Performance benchmarking
+    - [x] Data visualisation
     
 - [ ] **Documentation**
     - [ ] API documentation

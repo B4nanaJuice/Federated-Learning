@@ -29,5 +29,6 @@ def simulate():
     aggregation_server.run(client_fraction = config.SIM_CLIENTS_FRACTION)
 
     # Plot data
-    aggregation_server.plot_data()
+    aggregation_server.run_validation()
+    aggregation_server.plot()
 
