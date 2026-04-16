@@ -4,7 +4,7 @@ import time
 import torch
 import torch.nn as nn
 from tqdm import tqdm
-from typing import Optional, Dict
+from typing import Dict
 
 from app.models.dataloader import EnergyDataset
 from app.models.model import NormalMLP, SoftGatedMoE
@@ -38,7 +38,6 @@ class Client:
         self.local_epochs: int = local_epochs
         self.batch_size: int = batch_size
         self.optimizer: torch.optim.Optimizer = torch.optim.Adam(self.model.parameters(), lr = learning_rate)
-        self.delta_weights: Optional[Dict[int, torch.Tensor]] = None
 
         # Local metrics
         self.train_loss: float = float('inf')
@@ -57,14 +56,14 @@ class Client:
     
     def train_local(self) -> None:
         t0: float = time.time()
-        weights_before: Dict[int, torch.Tensor] = copy.deepcopy(self.model.state_dict())
 
         device: str = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.model = self.model.to(device = device)
         self.model.train()
+
         for _ in tqdm(range(self.local_epochs), desc = f'Client {self.client_id:2d}'):
-            # logger.info(f'Client {self.client_id} - Epoch {_+1}/{self.local_epochs}')
             epoch_loss: float = 0.0
+
             for batch in range(len(self.dataset) // self.batch_size + 1):
                 # Get batch data
                 start_idx: int = batch * self.batch_size
@@ -84,18 +83,12 @@ class Client:
                 self.optimizer.step()
 
             self.train_loss = epoch_loss / self.num_samples
-            # logger.info(f'Client {self.client_id} - Epoch training loss: {self.train_loss}')
-
-        weights_after: Dict[int, torch.Tensor] = copy.deepcopy(self.model.state_dict())
-        self.delta_weights = {
-            key: weights_after[key] - weights_before[key] 
-            for key in weights_before
-        }
 
         # Add differntial privacy noise to delta weights
         # Add compression to delta weights
 
         self.compute_time = time.time() - t0
+
         return
     
     def send_update(self) -> Dict:
@@ -103,7 +96,7 @@ class Client:
             'client_id': self.client_id,
             'round_id': self.round_id,
             'num_samples': self.num_samples,
-            'delta_weights': self.delta_weights,
+            'weights': copy.deepcopy(self.model.state_dict()),
             'train_loss': self.train_loss
         }
 

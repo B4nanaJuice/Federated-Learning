@@ -112,12 +112,12 @@ class Server:
             client_id = update.get('client_id')
             weight = weights.get(client_id)
 
-            for k, delta in update.get('delta_weights').items():
-                if k not in aggregated_delta:
-                    aggregated_delta[k] = torch.zeros_like(delta)
-                aggregated_delta[k] = weight * delta
+            for k, delta in update.get('weights').items():
+                if k not in aggregated:
+                    aggregated[k] = torch.zeros_like(delta)
+                aggregated[k] += weight * delta
 
-        return aggregated_delta
+        return aggregated
 
     def run(self, client_fraction: float = 1.0) -> None:
         for round in tqdm(range(1, self.max_rounds + 1), desc = 'Round'):
