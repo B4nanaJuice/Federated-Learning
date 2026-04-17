@@ -214,6 +214,10 @@ class Server:
             pv_plot.plot(x, self.validation_predictions['pv'].cpu(), label = 'pv prediction')
             net_plot.plot(x, self.validation_predictions['net'].cpu(), label = 'net prediction')
 
+            load_plot.set_title(f'MSE: {self.validation_MSE.get("load")}')
+            pv_plot.set_title(f'MSE: {self.validation_MSE.get("pv")}')
+            net_plot.set_title(f'MSE: {self.validation_MSE.get("net")}')
+
             load_plot.legend()
             pv_plot.legend()
             net_plot.legend()
@@ -224,15 +228,22 @@ def check_server():
     logger.info('Starting server check')
 
     from app.models.model import NormalMLP
-    server: Server = Server(global_model = NormalMLP(), max_rounds = 2)
+    server: Server = Server(global_model = NormalMLP(), max_rounds = 10)
     for i in range(1, 4):
         server.register_client(Client(client_id = i, model = NormalMLP(), batch_size = 128, local_epochs = 3))
     server.run()
 
     logger.info(f'Starting validation phase')
-    server.run_validation(dataset_index = 5, days_count = 5)
+    server.run_validation(dataset_index = 1, days_count = 5)
     server.plot()
-    server.plot(show_loss = False)
-    server.plot(show_validation = False)
+
+    server.run_validation(dataset_index = 2, days_count = 5)
+    server.plot(show_loss=False)
+
+    server.run_validation(dataset_index = 3, days_count = 5)
+    server.plot(show_loss=False)
+
+    server.run_validation(dataset_index = 15, days_count = 5)
+    server.plot(show_loss=False)
     
     logger.info('Server check ended successfully')
