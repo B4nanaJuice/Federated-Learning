@@ -35,6 +35,12 @@ class MaliciousClient(Client):
                 y[y < 0] = 0
 
                 return x, y
+            
+            case 'random':
+                x = torch.randn_like(x)
+                y = torch.rand_like(y)
+
+                return x, y
         
             case _:
                 logger.warning(f'Unknown attack method {attack_method}.')
@@ -45,8 +51,14 @@ class MaliciousClient(Client):
         return model
 
     def can_attack(self) -> bool:
-        rd.seed(self.round_id * self.client_id * self.attack_rate)
-        return rd.random() < self.attack_rate
+        return self.round_id in self.attacked_rounds
+    
+    def receive_global_model(self, global_weights: Dict[int, torch.Tensor], round_id: int) -> None:
+        # Determine if client will attack during this round
+        if round_id % (1/self.attack_rate) == 0:
+            self.attacked_rounds.append(round_id)
+
+        return super().receive_global_model(global_weights = global_weights, round_id = round_id)
     
     def get_batch(self, batch: int) -> tuple[torch.Tensor, torch.Tensor]:
 

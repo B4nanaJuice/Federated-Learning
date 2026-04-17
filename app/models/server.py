@@ -2,6 +2,7 @@
 import copy
 import torch
 import threading
+import random as rd
 import numpy as np
 import torch.nn as nn
 from tqdm import tqdm
@@ -54,6 +55,11 @@ class Server:
 
     def register_client(self, client: Client) -> None:
         self.client_registry[client.client_id] = client
+        return
+    
+    def register_clients(self, clients: List[Client]) -> None:
+        for _client in clients:
+            self.register_client(_client)
         return
 
     def select_clients(self, fraction: float = 1.0) -> List[Client]:
@@ -197,15 +203,18 @@ class Server:
                     attacked_rounds[client.client_id] = client.send_attacked_rounds()
 
             loss_plot.fill_between(x, min_loss, max_loss, color = '#89abcd')
-            loss_plot.plot(x, min_loss, '--', label = 'Minimum loss')
-            loss_plot.plot(x, max_loss, '--', label = 'Maximum loss')
-            loss_plot.plot(x, mean_loss, label = 'Average loss')
+            loss_plot.plot(x, min_loss, '--', label = 'Minimum MSE loss')
+            loss_plot.plot(x, max_loss, '--', label = 'Maximum MSE loss')
+            loss_plot.plot(x, mean_loss, label = 'Average MSE loss')
 
             for k, v in attacked_rounds.items():
                 logger.info(f'{k}: {v}')
-                loss_plot.vlines(v, min(min_loss), max(max_loss), label = f'Client {k} attack', linewidths = .5, color = '#000000')
+                loss_plot.vlines(v, min(min_loss), max(max_loss), label = f'Client {k} attack', linewidths = .5, color = f'#{rd.randint(0, 999999):06d}')
 
             loss_plot.legend()
+            loss_plot.set_xlabel('Round')
+            loss_plot.set_ylabel('Mean Squared Error (MSE) loss')
+            loss_plot.set_title('Training MSE loss over rounds')
 
         if show_validation:
             load_plot = fig.add_subplot(gs[0, 0])
@@ -227,9 +236,9 @@ class Server:
             pv_plot.plot(x, self.validation_predictions['pv'].cpu(), label = 'pv prediction')
             net_plot.plot(x, self.validation_predictions['net'].cpu(), label = 'net prediction')
 
-            load_plot.set_title(f'MSE: {self.validation_MSE.get("load")}')
-            pv_plot.set_title(f'MSE: {self.validation_MSE.get("pv")}')
-            net_plot.set_title(f'MSE: {self.validation_MSE.get("net")}')
+            load_plot.set_title(f'Validation MSE: {self.validation_MSE.get("load")}')
+            pv_plot.set_title(f'Valisation MSE: {self.validation_MSE.get("pv")}')
+            net_plot.set_title(f'Valisation MSE: {self.validation_MSE.get("net")}')
 
             load_plot.legend()
             pv_plot.legend()
@@ -244,14 +253,15 @@ def check_server():
     server: Server = Server(global_model = NormalMLP(), max_rounds = 20)
     
     # Register clients
-    server.register_client(Client(client_id = 1, model = NormalMLP(), batch_size = 128, local_epochs = 3))
-    server.register_client(Client(client_id = 2, model = NormalMLP(), batch_size = 128, local_epochs = 3))
-    server.register_client(MaliciousClient(client_id = 3, attack_rate = .1, model = NormalMLP(), batch_size = 128, local_epochs = 3))
+    server.register_client(Client(client_id = 1, model = NormalMLP(), batch_size = 64, local_epochs = 4))
+    server.register_client(Client(client_id = 2, model = NormalMLP(), batch_size = 32, local_epochs = 3))
+    server.register_client(MaliciousClient(client_id = 3, attack_rate = 1/6, model = NormalMLP(), batch_size = 32, local_epochs = 2, attack_method = 'random'))
+    server.register_client(Client(client_id = 4, model = NormalMLP(), batch_size = 64, local_epochs = 3))
         
-    server.run()
+    server.run(client_fraction = .5)
 
     logger.info(f'Starting validation phase')
-    server.run_validation(dataset_index = 1, days_count = 5)
+    server.run_validation(dataset_index = 1, days_count = 10)
     server.plot()
     
     logger.info('Server check ended successfully')
