@@ -49,16 +49,17 @@ Testing robust defense mechanisms ensures the system maintains both **model accu
 Federated-Learning/
 ├── app/
 │   └── models/
-│       ├── client.py       # Class for federated client
-│       ├── dataloader.py   # Dataloader class for data splitting and batchs 
-│       ├── model.py        # ML models creation
-│       └── server.py       # Class for centralized server
+│       ├── client.py            # Class for federated client
+│       ├── malicious_client.py  # Class for federated client
+│       ├── dataloader.py        # Dataloader class for data splitting and batchs 
+│       ├── model.py             # ML models creation
+│       └── server.py            # Class for centralized server
 ├── config/
-│   ├── logger.py           # Configuration for a logger
-│   └── settings.py         # Project configuration
+│   ├── logger.py                # Configuration for a logger
+│   └── settings.py              # Project configuration
 ├── data/
-│   ├── input/              # Input dataset in CSV format
-│   ├── processed/          # Preprocessed data
+│   ├── input/                   # Input dataset in CSV format
+│   ├── processed/               # Preprocessed data
 │   │   ├── train/
 │   │   │   └── building_*.pt
 │   │   ├── val/
@@ -229,4 +230,4 @@ These `.pt` files can be directly loaded during model training and testing using
 </details>
 
 ---
-## 📥 Installation guide
+## 📥 Installation and setup guide
