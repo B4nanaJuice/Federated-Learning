@@ -1,6 +1,7 @@
 # Imports
 from dotenv import load_dotenv
 import os
+import torch
 
 from config.logger import create_logger
 
@@ -9,6 +10,9 @@ logger = create_logger(__name__)
 
 # Create config class
 class BaseConfig:
+    DEVICE: str = 'cuda' if torch.cuda.is_available() else 'cpu'
+    logger.info(f'Using {DEVICE} as the device')
+
     # Data preprocessing
     INPUT_DATA_PATH: str = 'data/input'
     PROCESSED_DATA_PATH: str = 'data/processed'
@@ -22,10 +26,11 @@ class BaseConfig:
     # Simulation parameters
     SIM_MAX_ROUNDS: int = 20
     SIM_MIN_CLIENTS: int = 10
-    SIM_BATCH_SIZE: int = 16
+    SIM_BATCH_SIZE: int = 64
     SIM_LEARNING_RATE: float = 1e-3
     SIM_LOCAL_EPOCHS: int = 20
     SIM_CLIENTS_FRACTION: float = 0.5
+    SIM_THREADED: bool = True
 
 def _get_config() -> BaseConfig:
     """

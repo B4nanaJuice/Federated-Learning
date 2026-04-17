@@ -1,11 +1,12 @@
 # Imports
 import logging
 from datetime import datetime, timezone
+from typing import Callable
 import os
 
 def create_logger(name: str, 
                   log_path: str = "logs", 
-                  file_name: str | callable = lambda: datetime.now(timezone.utc).strftime("%Y-%m-%d")
+                  file_name: str | Callable = lambda: datetime.now(timezone.utc).strftime("%Y-%m-%d")
                 ) -> logging.Logger:
     """
     Creates a logger that logs to both a file and the console.

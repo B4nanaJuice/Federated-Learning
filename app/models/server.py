@@ -11,7 +11,7 @@ import matplotlib as mpl
 
 from app.models.client import Client
 from app.models.dataloader import EnergyDataset
-from config import create_logger
+from config import create_logger, config
 
 logger = create_logger(__name__)
 
@@ -69,14 +69,19 @@ class Server:
             client.receive_global_model(self.broadcast_model)
         return self.broadcast_model
     
-    def collect_updates(self) -> None:
+    def collect_updates(self, threaded: bool = config.SIM_THREADED) -> None:
         self.received_updates = []
-        threads: List[threading.Thread] = []
-        for client in self.selected_clients:
-            threads.append(threading.Thread(target = client.train_local))
 
-        [t.start() for t in threads]
-        [t.join() for t in threads]
+        if threaded:
+            threads: List[threading.Thread] = []
+            for client in self.selected_clients:
+                threads.append(threading.Thread(target = client.train_local))
+
+            [t.start() for t in threads]
+            [t.join() for t in threads]
+        else:
+            for client in self.selected_clients:
+                client.train_local()
 
         training_loss: List[float] = []
         for client in self.selected_clients:
@@ -133,8 +138,7 @@ class Server:
     
     def run_validation(self, dataset_index: int = 1, days_count: int = 10) -> None:
 
-        device: str = 'cuda' if torch.cuda.is_available() else 'cpu'
-        self.global_model = self.global_model.to(device = device)
+        self.global_model = self.global_model.to(device = config.DEVICE)
         self.global_model.eval()
 
         # Get data
@@ -145,8 +149,8 @@ class Server:
 
         with torch.no_grad():
             features, targets = dataset[:days_count*48]
-            features = features.to(device = device)
-            targets = targets.to(device = device)
+            features = features.to(device = config.DEVICE)
+            targets = targets.to(device = config.DEVICE)
 
             predictions: torch.Tensor = self.global_model(features)
 
@@ -162,9 +166,9 @@ class Server:
 
         # Compute MSE for load, pv and net consumption
         self.validation_MSE = {
-            'load': np.square(np.subtract(predictions[:, 0], targets[:, 0])).mean(),
-            'pv': np.square(np.subtract(predictions[:, 1], targets[:, 1])).mean(),
-            'net': np.square(np.subtract(predictions[:, 2], targets[:, 2])).mean()
+            'load': np.square(np.subtract(predictions[:, 0].cpu(), targets[:, 0].cpu())).mean(),
+            'pv': np.square(np.subtract(predictions[:, 1].cpu(), targets[:, 1].cpu())).mean(),
+            'net': np.square(np.subtract(predictions[:, 2].cpu(), targets[:, 2].cpu())).mean()
         }
 
         return
@@ -202,13 +206,13 @@ class Server:
             _len: int = len(self.validation_predictions['load'])
             x = np.linspace(1, _len, _len)
 
-            load_plot.plot(x, self.validation_predictions['load_true'], label = 'load truth')
-            pv_plot.plot(x, self.validation_predictions['pv_true'], label = 'pv truth')
-            net_plot.plot(x, self.validation_predictions['net_true'], label = 'net truth')
+            load_plot.plot(x, self.validation_predictions['load_true'].cpu(), label = 'load truth')
+            pv_plot.plot(x, self.validation_predictions['pv_true'].cpu(), label = 'pv truth')
+            net_plot.plot(x, self.validation_predictions['net_true'].cpu(), label = 'net truth')
 
-            load_plot.plot(x, self.validation_predictions['load'], label = 'load prediction')
-            pv_plot.plot(x, self.validation_predictions['pv'], label = 'pv prediction')
-            net_plot.plot(x, self.validation_predictions['net'], label = 'net prediction')
+            load_plot.plot(x, self.validation_predictions['load'].cpu(), label = 'load prediction')
+            pv_plot.plot(x, self.validation_predictions['pv'].cpu(), label = 'pv prediction')
+            net_plot.plot(x, self.validation_predictions['net'].cpu(), label = 'net prediction')
 
             load_plot.legend()
             pv_plot.legend()

@@ -8,7 +8,7 @@ from typing import Dict
 
 from app.models.dataloader import EnergyDataset
 from app.models.model import NormalMLP, SoftGatedMoE
-from config import create_logger
+from config import create_logger, config
 
 logger = create_logger(__name__)
 
@@ -57,8 +57,7 @@ class Client:
     def train_local(self) -> None:
         t0: float = time.time()
 
-        device: str = 'cuda' if torch.cuda.is_available() else 'cpu'
-        self.model = self.model.to(device = device)
+        self.model = self.model.to(device = config.DEVICE)
         self.model.train()
 
         for _ in tqdm(range(self.local_epochs), desc = f'Client {self.client_id:2d}'):
@@ -70,7 +69,7 @@ class Client:
                 end_idx: int = min((batch + 1) * self.batch_size, len(self.dataset))
                 x_batch, y_batch = self.dataset[start_idx:end_idx]
                 # Move batches to device (GPU if available)
-                x_batch, y_batch = x_batch.to(device = device), y_batch.to(device = device)
+                x_batch, y_batch = x_batch.to(device = config.DEVICE), y_batch.to(device = config.DEVICE)
 
                 # Forward pass
                 self.optimizer.zero_grad()
