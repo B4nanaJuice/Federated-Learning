@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 
 from app.models.client import Client
+from app.models.malicious_client import MaliciousClient
 from app.models.dataloader import EnergyDataset
 from config import create_logger, config
 
@@ -63,10 +64,10 @@ class Server:
         self.participation_rate = len(self.selected_clients) / len(self.client_registry)
         return self.selected_clients
     
-    def broadcast(self) -> Dict[str, torch.Tensor]:
+    def broadcast(self, round: int) -> Dict[str, torch.Tensor]:
         self.broadcast_model = copy.deepcopy(self.global_model.state_dict())
         for client in self.selected_clients:
-            client.receive_global_model(self.broadcast_model)
+            client.receive_global_model(self.broadcast_model, round)
         return self.broadcast_model
     
     def collect_updates(self, threaded: bool = config.SIM_THREADED) -> None:
@@ -127,7 +128,7 @@ class Server:
     def run(self, client_fraction: float = 1.0) -> None:
         for round in tqdm(range(1, self.max_rounds + 1), desc = 'Round'):
             self.select_clients(client_fraction)
-            self.broadcast()
+            self.broadcast(round = round)
             self.collect_updates()
             self.aggregate()
 
@@ -188,10 +189,22 @@ class Server:
             max_loss = [max(_) for _ in self.training_loss]
             mean_loss = [sum(_)/len(_) for _ in self.training_loss]
 
+            # If some registered clients are malicious, get their attacked rounds
+            attacked_rounds: Dict = {}
+            for client in self.client_registry.values():
+                if type(client) == MaliciousClient:
+                    logger.info(f'Client {client.client_id} attacked rounds: {client.send_attacked_rounds()}')
+                    attacked_rounds[client.client_id] = client.send_attacked_rounds()
+
             loss_plot.fill_between(x, min_loss, max_loss, color = '#89abcd')
             loss_plot.plot(x, min_loss, '--', label = 'Minimum loss')
             loss_plot.plot(x, max_loss, '--', label = 'Maximum loss')
             loss_plot.plot(x, mean_loss, label = 'Average loss')
+
+            for k, v in attacked_rounds.items():
+                logger.info(f'{k}: {v}')
+                loss_plot.vlines(v, min(min_loss), max(max_loss), label = f'Client {k} attack', linewidths = .5, color = '#000000')
+
             loss_plot.legend()
 
         if show_validation:
@@ -228,22 +241,17 @@ def check_server():
     logger.info('Starting server check')
 
     from app.models.model import NormalMLP
-    server: Server = Server(global_model = NormalMLP(), max_rounds = 10)
-    for i in range(1, 4):
-        server.register_client(Client(client_id = i, model = NormalMLP(), batch_size = 128, local_epochs = 3))
+    server: Server = Server(global_model = NormalMLP(), max_rounds = 20)
+    
+    # Register clients
+    server.register_client(Client(client_id = 1, model = NormalMLP(), batch_size = 128, local_epochs = 3))
+    server.register_client(Client(client_id = 2, model = NormalMLP(), batch_size = 128, local_epochs = 3))
+    server.register_client(MaliciousClient(client_id = 3, attack_rate = .1, model = NormalMLP(), batch_size = 128, local_epochs = 3))
+        
     server.run()
 
     logger.info(f'Starting validation phase')
     server.run_validation(dataset_index = 1, days_count = 5)
     server.plot()
-
-    server.run_validation(dataset_index = 2, days_count = 5)
-    server.plot(show_loss=False)
-
-    server.run_validation(dataset_index = 3, days_count = 5)
-    server.plot(show_loss=False)
-
-    server.run_validation(dataset_index = 15, days_count = 5)
-    server.plot(show_loss=False)
     
     logger.info('Server check ended successfully')

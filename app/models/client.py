@@ -43,7 +43,7 @@ class Client:
         self.train_loss: float = float('inf')
         self.compute_time: float = 0.0
 
-    def receive_global_model(self, global_weights: Dict[int, torch.Tensor]) -> None:
+    def receive_global_model(self, global_weights: Dict[int, torch.Tensor], round_id: int) -> None:
         """
         Receive global model weights from the server and update the local model.
         
@@ -51,7 +51,7 @@ class Client:
             global_weights (Dict[int, torch.Tensor]): The global model weights received from the server.
         """
         self.model.load_state_dict(copy.deepcopy(global_weights))
-        self.round_id += 1
+        self.round_id = round_id
         return
     
     def train_local(self) -> None:
@@ -65,9 +65,7 @@ class Client:
 
             for batch in range(len(self.dataset) // self.batch_size + 1):
                 # Get batch data
-                start_idx: int = batch * self.batch_size
-                end_idx: int = min((batch + 1) * self.batch_size, len(self.dataset))
-                x_batch, y_batch = self.dataset[start_idx:end_idx]
+                x_batch, y_batch = self.get_batch(batch)
                 # Move batches to device (GPU if available)
                 x_batch, y_batch = x_batch.to(device = config.DEVICE), y_batch.to(device = config.DEVICE)
 
@@ -89,7 +87,13 @@ class Client:
         self.compute_time = time.time() - t0
 
         return
-    
+
+    def get_batch(self, batch: int) -> tuple[torch.Tensor, torch.Tensor]:
+        start_idx: int = batch * self.batch_size
+        end_idx: int = min((batch + 1) * self.batch_size, len(self.dataset))
+        x_batch, y_batch = self.dataset[start_idx:end_idx]
+        return x_batch, y_batch
+
     def send_update(self) -> Dict:
         return {
             'client_id': self.client_id,
