@@ -19,6 +19,9 @@ class BaseConfig:
     INPUT_DATA_FILENAME: str = 'Final_Energy_Dataset_with_weather.csv'
     NUMBER_CLIENTS: int = 20
 
+    # Data saving
+    SAVE_DATA_PATH: str = 'save'
+
     # Data parameters
     LOOKBACK: int = 48
     NUM_FEATURES: int = 7 # weekday, tod_sin, tod_cos, temp, rhum, wspd, wdir
