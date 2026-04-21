@@ -19,17 +19,22 @@ if __name__ == "__main__":
             
         case 'check':
             logger.info("Running checks...")
-            from app.models import check_dataset, check_models, check_client, check_server
+            from app.models import check_dataset, check_models, check_client, check_server, check_malicious_client
             # check_models()
             # check_dataset()
-            # check_client()
-            check_server()
+            check_client()
+            # check_malicious_client()
+            # check_server()
 
         case 'run-simulation':
             logger.info("Running simulation...")
             from app import simulate
             simulate()
-        
+
+        case 'test':
+            logger.info('Running test simulation...')
+            from app import fast_simulate
+            fast_simulate()
 
         case _:
-            print("Available commands : [preprocess, check, run-simulation]")
+            print("Available commands : [preprocess, check, run-simulation, test]")

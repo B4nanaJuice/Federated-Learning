@@ -12,8 +12,7 @@ def simulate():
     # Create server
     aggregation_server: Server = Server(
         global_model = NormalMLP(),
-        max_rounds = config.SIM_MAX_ROUNDS,
-        min_clients = config.SIM_MIN_CLIENTS
+        max_rounds = config.SIM_MAX_ROUNDS
     )
 
     # Add 20 clients on the server
@@ -48,4 +47,31 @@ def simulate():
     # Plot data
     aggregation_server.run_validation()
     aggregation_server.plot()
+    return
 
+def fast_simulate():
+    # Create server
+    aggregation_server: Server = Server(
+        global_model = NormalMLP(),
+        max_rounds = 20
+    )
+
+    # Add clients
+    clients: List[Client] = [
+        MaliciousClient(client_id = 1, local_epochs = 10, batch_size = 256, model = NormalMLP(), attack_method = 'random'),
+        MaliciousClient(client_id = 2, local_epochs = 10, batch_size = 256, model = NormalMLP(), attack_method = 'random'),
+        MaliciousClient(client_id = 3, local_epochs = 10, batch_size = 256, model = NormalMLP(), attack_method = 'random'),
+        MaliciousClient(client_id = 4, local_epochs = 10, batch_size = 256, model = NormalMLP(), attack_method = 'random'),
+        MaliciousClient(client_id = 5, local_epochs = 10, batch_size = 256, model = NormalMLP(), attack_method = 'random'),
+        MaliciousClient(client_id = 6, local_epochs = 10, batch_size = 256, model = NormalMLP(), attack_method = 'random'),
+    ]
+
+    aggregation_server.register_clients(clients)
+
+    # Run the server
+    aggregation_server.run(2/3)
+
+    # Plot data
+    aggregation_server.run_validation()
+    aggregation_server.plot()
+    return
