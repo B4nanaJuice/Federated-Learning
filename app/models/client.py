@@ -21,7 +21,8 @@ class Client:
                  model: NormalMLP | SoftGatedMoE = NormalMLP(), 
                  local_epochs: int = 5, 
                  batch_size: int = 32,
-                 learning_rate: float = 0.001
+                 learning_rate: float = 0.001,
+                 **kwargs
                  ):
         
         # Identity
@@ -68,7 +69,7 @@ class Client:
     def train_local(self) -> None:
         t0: float = time.time()
 
-        early_stopper: EarlyStopper = EarlyStopper(patience = 3, min_delta = 1e-2)
+        early_stopper: EarlyStopper = EarlyStopper(patience = 5, min_delta = 1e-3)
         self.model = self.model.to(device = config.DEVICE)
         self.model.train()
 
@@ -133,7 +134,7 @@ class Client:
     
     def plot(self) -> None:
         
-        x: List[int] = list(range(1, self.local_epochs + 1))
+        x: List[int] = list(range(1, len(self.hist_train_loss) + 1))
         plt.plot(x, self.hist_train_loss, label = 'Train Loss', color = '#133E71')
         plt.plot(x, self.hist_validation_loss, label = 'Validation Loss', color = '#009FE3')
 

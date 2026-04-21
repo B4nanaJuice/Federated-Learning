@@ -25,7 +25,8 @@ class Server:
                  global_model: nn.Module,
                  max_rounds: int = 50,
                  min_clients: int = 2,
-                 aggregation_function: Optional[Callable] = None
+                 aggregation_function: Optional[Callable] = None,
+                 **kwargs
                  ):
         
         # Coordination
