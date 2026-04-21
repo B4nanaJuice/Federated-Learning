@@ -2,7 +2,7 @@
 from typing import List
 import random as rd
 
-from app.models import Client, Server, NormalMLP, MaliciousClient
+from app.models import Client, Server, NormalMLP, MaliciousClient, AttackedServer
 from config import config, create_logger
 
 logger = create_logger(__name__)
@@ -53,17 +53,18 @@ def fast_simulate():
     # Create server
     aggregation_server: Server = Server(
         global_model = NormalMLP(),
-        max_rounds = 20
+        max_rounds = 20,
+        # attack_rate = .05
     )
 
     # Add clients
     clients: List[Client] = [
-        MaliciousClient(client_id = 1, local_epochs = 10, batch_size = 256, model = NormalMLP(), attack_method = 'random'),
-        MaliciousClient(client_id = 2, local_epochs = 10, batch_size = 256, model = NormalMLP(), attack_method = 'random'),
-        MaliciousClient(client_id = 3, local_epochs = 10, batch_size = 256, model = NormalMLP(), attack_method = 'random'),
-        MaliciousClient(client_id = 4, local_epochs = 10, batch_size = 256, model = NormalMLP(), attack_method = 'random'),
-        MaliciousClient(client_id = 5, local_epochs = 10, batch_size = 256, model = NormalMLP(), attack_method = 'random'),
-        MaliciousClient(client_id = 6, local_epochs = 10, batch_size = 256, model = NormalMLP(), attack_method = 'random'),
+        Client(client_id = 1, local_epochs = 10, batch_size = 256, model = NormalMLP()),
+        Client(client_id = 2, local_epochs = 10, batch_size = 256, model = NormalMLP()),
+        Client(client_id = 3, local_epochs = 10, batch_size = 256, model = NormalMLP()),
+        Client(client_id = 4, local_epochs = 10, batch_size = 256, model = NormalMLP()),
+        Client(client_id = 5, local_epochs = 10, batch_size = 256, model = NormalMLP()),
+        Client(client_id = 6, local_epochs = 10, batch_size = 256, model = NormalMLP()),
     ]
 
     aggregation_server.register_clients(clients)
