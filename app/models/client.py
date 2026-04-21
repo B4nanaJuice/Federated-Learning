@@ -2,12 +2,15 @@
 import copy
 import time
 import torch
+import numpy as np
 import torch.nn as nn
 from tqdm import tqdm
-from typing import Dict
+from typing import Dict, List
+import matplotlib.pyplot as plt
 
 from app.models.dataloader import EnergyDataset
 from app.models.model import NormalMLP, SoftGatedMoE
+from app.models.utils import EarlyStopper
 from config import create_logger, config
 
 logger = create_logger(__name__)
@@ -26,11 +29,17 @@ class Client:
         self.round_id: int = 0
 
         # Local data
-        self._tensor: torch.Tensor = torch.load(f'data/processed/train/building_{client_id}.pt')
-        self._features: torch.Tensor = self._tensor[:, :-3]
-        self._targets: torch.Tensor = self._tensor[:, -3:]
-        self.dataset: EnergyDataset = EnergyDataset(self._features, self._targets)
-        self.num_samples: int = len(self.dataset)
+        self._train_tensor: torch.Tensor = torch.load(f'data/processed/train/building_{client_id}.pt')
+        self._train_features: torch.Tensor = self._train_tensor[:, :-3]
+        self._train_targets: torch.Tensor = self._train_tensor[:, -3:]
+        self.train_dataset: EnergyDataset = EnergyDataset(self._train_features, self._train_targets)
+
+        self._validation_tensor: torch.Tensor = torch.load(f'data/processed/val/building_{client_id}.pt')
+        self._validation_features: torch.Tensor = self._validation_tensor[:, :-3]
+        self._validation_targets: torch.Tensor = self._validation_tensor[:, -3:]
+        self.validation_dataset: EnergyDataset = EnergyDataset(self._validation_features, self._validation_targets)
+
+        self.num_samples: int = len(self.train_dataset)
 
         # Local model
         self.model: NormalMLP | SoftGatedMoE = copy.deepcopy(model)
@@ -42,6 +51,8 @@ class Client:
         # Local metrics
         self.train_loss: float = float('inf')
         self.compute_time: float = 0.0
+        self.hist_train_loss: List[float] = []
+        self.hist_validation_loss: List[float] = []
 
     def receive_global_model(self, global_weights: Dict[int, torch.Tensor], round_id: int) -> None:
         """
@@ -57,13 +68,14 @@ class Client:
     def train_local(self) -> None:
         t0: float = time.time()
 
+        early_stopper: EarlyStopper = EarlyStopper(patience = 3, min_delta = 1e-2)
         self.model = self.model.to(device = config.DEVICE)
         self.model.train()
 
-        for _ in tqdm(range(self.local_epochs), desc = f'Client {self.client_id:2d}'):
+        for _ in range(self.local_epochs):
             epoch_loss: float = 0.0
 
-            for batch in range(len(self.dataset) // self.batch_size + 1):
+            for batch in range(len(self.train_dataset) // self.batch_size + 1):
                 # Get batch data
                 x_batch, y_batch = self.get_batch(batch)
                 # Move batches to device (GPU if available)
@@ -80,6 +92,22 @@ class Client:
                 self.optimizer.step()
 
             self.train_loss = epoch_loss / self.num_samples
+            self.hist_train_loss.append(self.train_loss)
+
+            # Validation
+            with torch.no_grad():
+                x_val, y_val = self.validation_dataset[:]
+                x_val, y_val = x_val.to(device = config.DEVICE), y_val.to(device = config.DEVICE)
+
+                predictions = self.model(x_val)
+                loss = self.loss_function(predictions, y_val)
+                val_loss = loss.item()
+                self.hist_validation_loss.append(val_loss)
+
+                # Test if stop early
+                if early_stopper.early_stop(val_loss):
+                    logger.info(f'Client {self.client_id} stopped early at epoch {_+1}.')
+                    break
 
         # Add differntial privacy noise to delta weights
         # Add compression to delta weights
@@ -90,8 +118,8 @@ class Client:
 
     def get_batch(self, batch: int) -> tuple[torch.Tensor, torch.Tensor]:
         start_idx: int = batch * self.batch_size
-        end_idx: int = min((batch + 1) * self.batch_size, len(self.dataset))
-        x_batch, y_batch = self.dataset[start_idx:end_idx]
+        end_idx: int = min((batch + 1) * self.batch_size, len(self.train_dataset))
+        x_batch, y_batch = self.train_dataset[start_idx:end_idx]
         return x_batch, y_batch
 
     def send_update(self) -> Dict:
@@ -102,13 +130,31 @@ class Client:
             'weights': copy.deepcopy(self.model.state_dict()),
             'train_loss': self.train_loss
         }
+    
+    def plot(self) -> None:
+        
+        x: List[int] = list(range(1, self.local_epochs + 1))
+        plt.plot(x, self.hist_train_loss, label = 'Train Loss', color = '#133E71')
+        plt.plot(x, self.hist_validation_loss, label = 'Validation Loss', color = '#009FE3')
+
+        plt.legend()
+        plt.grid(visible = True)
+        plt.xlabel('Epoch')
+        plt.ylabel('Loss')
+        plt.show()
+
+        return
 
 # Method to check if client's training works
 def check_client():
     logger.info('Starting client check')
 
-    client: Client = Client(client_id = 1, batch_size = 64)
+    client: Client = Client(client_id = 1, batch_size = 64, local_epochs = 300)
     client.train_local()
 
     logger.info(f'Model training time: {client.compute_time:.1f}s')
+    logger.info(f'Model MSE loss: {client.train_loss:.4f}')
+
+    client.plot()
+
     logger.info('Client check ended successfully')
