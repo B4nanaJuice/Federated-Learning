@@ -18,6 +18,7 @@ class BaseConfig:
     PROCESSED_DATA_PATH: str = 'data/processed'
     INPUT_DATA_FILENAME: str = 'Final_Energy_Dataset_with_weather.csv'
     NUMBER_CLIENTS: int = 20
+    PICK_RANDOM_CLIENTS: bool = True
 
     # Data saving
     SAVE_DATA_PATH: str = 'save'
@@ -28,10 +29,10 @@ class BaseConfig:
 
     # Simulation parameters
     SIM_MAX_ROUNDS: int = 20
-    SIM_MIN_CLIENTS: int = 10
+    SIM_TOTAL_CLIENTS: int = 20
     SIM_BATCH_SIZE: int = 64
     SIM_LEARNING_RATE: float = 1e-3
-    SIM_LOCAL_EPOCHS: int = 20
+    SIM_LOCAL_EPOCHS: int = 50
     SIM_CLIENTS_FRACTION: float = 0.5
     SIM_THREADED: bool = True
 

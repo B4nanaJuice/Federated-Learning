@@ -3,6 +3,7 @@ import logging
 import pandas as pd
 import torch
 import os
+import random as rd
 
 import data.preprocessing as preprocessing
 from config import config, create_logger
@@ -25,9 +26,14 @@ def run_preprocessing():
     data: pd.DataFrame = preprocessing.read_csv()
     for building_id in range(1, config.NUMBER_CLIENTS + 1):
 
-        logger.info(f'Processing building_id: {building_id}')
+        if config.PICK_RANDOM_CLIENTS:
+            client = rd.choice(range(1, 300))
+        else:
+            client = building_id
 
-        df: pd.DataFrame = preprocessing.preprocess_data(data, building_id)
+        logger.info(f'Processing building_id {building_id} from client {client}')
+
+        df: pd.DataFrame = preprocessing.preprocess_data(data, client)
         df: pd.DataFrame = preprocessing.preprocess_date(df)
         df: pd.DataFrame = preprocessing.compute_net_consumption(df)
         df: pd.DataFrame = preprocessing.reorder_columns(df)
