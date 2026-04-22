@@ -4,9 +4,10 @@ import time
 import torch
 import numpy as np
 import torch.nn as nn
-from tqdm import tqdm
 from typing import Dict, List
+import matplotlib as mpl
 import matplotlib.pyplot as plt
+from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 from app.models.dataloader import EnergyDataset
 from app.models.model import NormalMLP, SoftGatedMoE
@@ -17,7 +18,7 @@ logger = create_logger(__name__)
 
 class Client:
     def __init__(self, 
-                 client_id: int, 
+                 client_id: int | str, 
                  model: NormalMLP | SoftGatedMoE = NormalMLP(), 
                  local_epochs: int = 5, 
                  batch_size: int = 32,
@@ -54,6 +55,8 @@ class Client:
         self.compute_time: float = 0.0
         self.hist_train_loss: List[float] = []
         self.hist_validation_loss: List[float] = []
+        self.MAE: List[float] = []
+        self.RMSE: List[float] = []
 
     def receive_global_model(self, global_weights: Dict[int, torch.Tensor], round_id: int) -> None:
         """
@@ -75,6 +78,8 @@ class Client:
 
         for _ in range(self.local_epochs):
             epoch_loss: float = 0.0
+            epoch_mae: float = 0.0
+            epoch_rmse: float = 0.0
 
             for batch in range(len(self.train_dataset) // self.batch_size + 1):
                 # Get batch data
@@ -87,6 +92,8 @@ class Client:
                 predictions: torch.Tensor = self.model(x_batch)
                 loss: torch.Tensor = self.loss_function(predictions, y_batch)
                 epoch_loss += loss.item() * len(x_batch)
+                epoch_mae += mean_absolute_error(y_batch.tolist(), predictions.tolist())
+                epoch_rmse += mean_squared_error(y_batch.tolist(), predictions.tolist())
 
                 # Backward pass
                 loss.backward()
@@ -94,6 +101,8 @@ class Client:
 
             self.train_loss = epoch_loss / self.num_samples
             self.hist_train_loss.append(self.train_loss)
+            self.MAE.append(epoch_mae / self.num_samples)
+            self.RMSE.append(np.sqrt(epoch_rmse / self.num_samples))
 
             # Validation
             with torch.no_grad():
@@ -129,32 +138,63 @@ class Client:
             'round_id': self.round_id,
             'num_samples': self.num_samples,
             'weights': copy.deepcopy(self.model.state_dict()),
-            'train_loss': self.train_loss
+            'train_loss': self.train_loss,
+            'MAE': self.MAE,
+            'RMSE': self.RMSE
         }
     
     def plot(self) -> None:
-        
+
+        fig = plt.figure()
+        gs = mpl.gridspec.GridSpec(3, 1, wspace = 0.25, hspace = 1)
+
+        loss_plot = fig.add_subplot(gs[0, 0])
         x: List[int] = list(range(1, len(self.hist_train_loss) + 1))
-        plt.plot(x, self.hist_train_loss, label = 'Train Loss', color = '#133E71')
-        plt.plot(x, self.hist_validation_loss, label = 'Validation Loss', color = '#009FE3')
+        loss_plot.plot(x, self.hist_train_loss, label = 'Train Loss', color = '#133E71')
+        loss_plot.plot(x, self.hist_validation_loss, label = 'Validation Loss', color = '#009FE3')
+        loss_plot.set_title('')
+        loss_plot.set_xlabel('Epoch')
+        loss_plot.set_ylabel('Mean Squared Error (MSE) Loss')
 
-        plt.legend()
-        plt.grid(visible = True)
-        plt.xlabel('Epoch')
-        plt.ylabel('Loss')
+        mae_plot = fig.add_subplot(gs[1, 0])
+        mae_plot.boxplot(self.MAE, label = 'MAE')
+        mae_plot.set_title('Mean Absolute Error (MAE)')
+        mae_plot.set_xlabel('Client ID')
+        mae_plot.set_ylabel('MAE')
+
+        rmse_plot = fig.add_subplot(gs[2, 0])
+        rmse_plot.boxplot(self.RMSE, label = 'RMSE')
+        rmse_plot.set_title('Root Mean Squared Error (RMSE)')
+        rmse_plot.set_title('Mean Absolute Error (MAE)')
+        rmse_plot.set_xlabel('Client ID')
+        rmse_plot.set_ylabel('RMSE')
+        
+
+        for _ in [loss_plot, mae_plot, rmse_plot]:
+            _.legend()
+            _.spines['top'].set_visible(False)
+            _.spines['right'].set_visible(False)
+            _.grid(axis = 'y')
+
         plt.show()
-
         return
 
 # Method to check if client's training works
 def check_client():
     logger.info('Starting client check')
 
-    client: Client = Client(client_id = 1, batch_size = 64, local_epochs = 300)
+    client: Client = Client(client_id = 1, batch_size = 64, local_epochs = 30)
     client.train_local()
 
-    logger.info(f'Model training time: {client.compute_time:.1f}s')
-    logger.info(f'Model MSE loss: {client.train_loss:.4f}')
+    compute_time = client.compute_time
+    mse = client.train_loss
+    mae = sum(client.MAE)/len(client.MAE)
+    rmse = sum(client.RMSE)/len(client.RMSE)
+
+    logger.info(f'Compute time : {compute_time:.8f}')
+    logger.info(f'Train loss (MSE) : {mse:.8f}')
+    logger.info(f'MAE : {mae:.8f}')
+    logger.info(f'RMSE : {rmse:.8f}')
 
     client.plot()
 

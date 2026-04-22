@@ -3,7 +3,6 @@ import copy
 import json
 import torch
 import threading
-import random as rd
 import numpy as np
 import torch.nn as nn
 from tqdm import tqdm
@@ -51,10 +50,12 @@ class Server:
         # Global metrics
         self.participation_rate: float = 0.0
         self.training_loss: List[List[float]] = []
+        self.MAE: Dict[str, List[float]] = {}
+        self.RMSE: Dict[str, List[float]] = {}
 
-        # Validation phase
-        self.validation_predictions: Dict = {}
-        self.validation_MSE: Dict = {}
+        # Test phase
+        self.test_predictions: Dict = {}
+        self.test_MSE: Dict = {}
 
     def register_client(self, client: Client) -> None:
         self.client_registry[client.client_id] = client
@@ -96,7 +97,11 @@ class Server:
         training_loss: List[float] = []
         for client in self.selected_clients:
             update = client.send_update()
+
             training_loss.append(update.get('train_loss'))
+            self.MAE[client.client_id] = self.MAE.get(client.client_id, []) + update.get('MAE', [])
+            self.RMSE[client.client_id] = self.RMSE.get(client.client_id, []) + update.get('RMSE', [])
+
             self.received_updates.append(update)
             self.client_weights[client.client_id] = 1/len(self.selected_clients)
         self.training_loss.append(training_loss)
@@ -146,7 +151,7 @@ class Server:
 
         return
     
-    def run_validation(self, dataset_index: int = 1, days_count: int = 10) -> None:
+    def run_test(self, dataset_index: int = 1, days_count: int = 10) -> None:
 
         self.global_model = self.global_model.to(device = config.DEVICE)
         self.global_model.eval()
@@ -165,7 +170,7 @@ class Server:
             predictions: torch.Tensor = self.global_model(features)
 
             # Save load, pv and net predictions
-            self.validation_predictions = {
+            self.test_predictions = {
                 'load': predictions[:, 0].tolist(),
                 'pv': predictions[:, 1].tolist(),
                 'net': predictions[:, 2].tolist(),
@@ -175,7 +180,7 @@ class Server:
             }
 
         # Compute MSE for load, pv and net consumption
-        self.validation_MSE = {
+        self.test_MSE = {
             'load': np.square(np.subtract(predictions[:, 0].cpu(), targets[:, 0].cpu())).mean().item(),
             'pv': np.square(np.subtract(predictions[:, 1].cpu(), targets[:, 1].cpu())).mean().item(),
             'net': np.square(np.subtract(predictions[:, 2].cpu(), targets[:, 2].cpu())).mean().item()
@@ -183,70 +188,99 @@ class Server:
 
         return
     
-    def plot(self, show_loss: bool = True, show_validation: bool = True) -> None:
+    def plot_test_loss(self, plot: plt.Axes) -> None:
+        x = np.linspace(1, self.max_rounds, self.max_rounds)
+        min_loss = [min(_) for _ in self.training_loss]
+        max_loss = [max(_) for _ in self.training_loss]
+        mean_loss = [sum(_)/len(_) for _ in self.training_loss]
+
+        # If some registered clients are malicious, get their attacked rounds
+        attacked_rounds: Dict = {}
+        for client in self.client_registry.values():
+            if type(client) == MaliciousClient:
+                logger.info(f'Client {client.client_id} attacked rounds: {client.send_attacked_rounds()}')
+                if len(client.send_attacked_rounds()) > 0:
+                    attacked_rounds[client.client_id] = client.send_attacked_rounds()
+                
+
+        plot.fill_between(x, min_loss, max_loss, color = "#bcbcbc")
+        plot.plot(x, mean_loss, label = 'Average MSE Loss', color = '#133E71')
+
+        for k, v in attacked_rounds.items():
+            plot.vlines(v, min(min_loss), max(max_loss), linestyles = 'dashed', label = f'Attack', linewidths = 1, color = '#8AB425')
+
+        # Hide axes
+        plot.spines['top'].set_visible(False)
+        plot.spines['right'].set_visible(False)
+        plot.legend()
+        plot.set_xlabel('Round')
+        plot.set_ylabel('Mean Squared Error (MSE) loss')
+        plot.set_title('Training MSE loss over rounds')
+        return
+
+    def plot_MAE(self, plot: plt.Axes) -> None:
+        plot.boxplot(self.MAE.values())
+
+        plot.spines['top'].set_visible(False)
+        plot.spines['right'].set_visible(False)
+        plot.set_xlabel('Client ID')
+        plot.set_ylabel('Mean Absolute Error (MAE)')
+        plot.set_title('Mean Absolute Error for server\'s clients')
+        plot.grid(axis = 'y')
+        plot.set_xticklabels([str(_) for _ in self.RMSE.keys()])
+        return
+    
+    def plot_RMSE(self, plot: plt.Axes) -> None:
+        plot.boxplot(self.RMSE.values())
+
+        plot.spines['top'].set_visible(False)
+        plot.spines['right'].set_visible(False)
+        plot.set_xlabel('Client ID')
+        plot.set_ylabel('Root Mean Squared Error (RMSE)')
+        plot.set_title('Root Mean Squared Error for server\'s clients')
+        plot.grid(axis = 'y')
+        plot.set_xticklabels([str(_) for _ in self.RMSE.keys()])
+        return
+    
+    def plot_pred(self, plot: plt.Axes, column: str) -> None:
+        _len: int = len(self.test_predictions[column])
+        x = np.linspace(1, _len, _len)
+
+        plot.plot(x, self.test_predictions[f'{column}_true'], label = f'{column} truth', color = '#133E71')
+        plot.plot(x, self.test_predictions[column], label = f'{column} prediction', color = '#009FE3')
+
+        plot.spines['top'].set_visible(False)
+        plot.spines['right'].set_visible(False)
+        plot.legend()
+        plot.set_xlabel('$\\Delta t$ (30 minutes)')
+        plot.set_ylabel('Normalized value')
+        plot.set_title(f'{column.capitalize()} prediction vs. ground truth')
+        return
+
+    def plot(self) -> None:
         # Generate layout from show_* options
         fig = plt.figure()
-        gs = mpl.gridspec.GridSpec(3, 2, wspace = 0.25, hspace = 0.25)
+        gs = mpl.gridspec.GridSpec(3, 2, wspace = .25, hspace = .5)
 
-        if show_loss:
-            loss_plot = fig.add_subplot(gs[:, 1])
-            if not show_validation:
-                loss_plot = fig.add_subplot(gs[:, :])
+        # === PLOT LOSS ===
+        loss_plot = fig.add_subplot(gs[0, 1])
+        self.plot_test_loss(loss_plot)
 
-            x = np.linspace(1, self.max_rounds, self.max_rounds)
-            min_loss = [min(_) for _ in self.training_loss]
-            max_loss = [max(_) for _ in self.training_loss]
-            mean_loss = [sum(_)/len(_) for _ in self.training_loss]
+        # === PLOT MAE ===
+        mae_plot = fig.add_subplot(gs[1, 1])
+        self.plot_MAE(mae_plot)
 
-            # If some registered clients are malicious, get their attacked rounds
-            attacked_rounds: Dict = {}
-            for client in self.client_registry.values():
-                if type(client) == MaliciousClient:
-                    logger.info(f'Client {client.client_id} attacked rounds: {client.send_attacked_rounds()}')
-                    if len(client.send_attacked_rounds()) > 0:
-                        attacked_rounds[client.client_id] = client.send_attacked_rounds()
-                    
+        # === PLOT RMSE ===
+        rmse_plot = fig.add_subplot(gs[2, 1])
+        self.plot_RMSE(rmse_plot)
 
-            loss_plot.fill_between(x, min_loss, max_loss, color = '#89abcd')
-            loss_plot.plot(x, min_loss, '--', label = 'Minimum MSE loss')
-            loss_plot.plot(x, max_loss, '--', label = 'Maximum MSE loss')
-            loss_plot.plot(x, mean_loss, label = 'Average MSE loss')
-
-            for k, v in attacked_rounds.items():
-                loss_plot.vlines(v, min(min_loss), max(max_loss), label = f'Client {k} attack', linewidths = .5, color = f'#{rd.randint(0, 999999):06d}')
-
-            loss_plot.legend()
-            loss_plot.set_xlabel('Round')
-            loss_plot.set_ylabel('Mean Squared Error (MSE) loss')
-            loss_plot.set_title('Training MSE loss over rounds')
-
-        if show_validation:
-            load_plot = fig.add_subplot(gs[0, 0])
-            pv_plot = fig.add_subplot(gs[1, 0])
-            net_plot = fig.add_subplot(gs[2, 0])
-            if not show_loss:
-                load_plot = fig.add_subplot(gs[0, :])
-                pv_plot = fig.add_subplot(gs[1, :])
-                net_plot = fig.add_subplot(gs[2, :])
-            
-            _len: int = len(self.validation_predictions['load'])
-            x = np.linspace(1, _len, _len)
-
-            load_plot.plot(x, self.validation_predictions['load_true'], label = 'load truth')
-            pv_plot.plot(x, self.validation_predictions['pv_true'], label = 'pv truth')
-            net_plot.plot(x, self.validation_predictions['net_true'], label = 'net truth')
-
-            load_plot.plot(x, self.validation_predictions['load'], label = 'load prediction')
-            pv_plot.plot(x, self.validation_predictions['pv'], label = 'pv prediction')
-            net_plot.plot(x, self.validation_predictions['net'], label = 'net prediction')
-
-            load_plot.set_title(f'Validation MSE: {self.validation_MSE.get("load")}')
-            pv_plot.set_title(f'Valisation MSE: {self.validation_MSE.get("pv")}')
-            net_plot.set_title(f'Valisation MSE: {self.validation_MSE.get("net")}')
-
-            load_plot.legend()
-            pv_plot.legend()
-            net_plot.legend()
+        # === PLOT PREDICTIONS ===
+        load_plot = fig.add_subplot(gs[0, 0])
+        self.plot_pred(load_plot, 'load')
+        pv_plot = fig.add_subplot(gs[1, 0])
+        self.plot_pred(pv_plot, 'pv')
+        net_plot = fig.add_subplot(gs[2, 0])
+        self.plot_pred(net_plot, 'net')
 
         plt.show()
         return
@@ -262,8 +296,8 @@ class Server:
             'global_model': str(type(self.global_model)),
 
             'training_loss': self.training_loss,
-            'validation_predictions': self.validation_predictions,
-            'validation_MSE': self.validation_MSE
+            'test_predictions': self.test_predictions,
+            'test_MSE': self.test_MSE
         }
     
     @staticmethod
@@ -277,6 +311,13 @@ class Server:
         # Save the server state
         with open(f'{config.SAVE_DATA_PATH}/{filename}_state.json', mode = 'w', encoding = 'utf-8') as f:
             f.write(json.dumps(server.to_dict()))
+        return
+    
+    def save_model(self, filename: str) -> None:
+        torch.save(self.global_model.state_dict(), f'{config.SAVE_DATA_PATH}/{filename}.pt')
+        return
+    
+    def save_metrics(self, filename: str) -> None:
         return
     
     @staticmethod
@@ -295,8 +336,8 @@ class Server:
 
         # Load metrics
         server.training_loss = server_data.get('training_loss', [])
-        server.validation_predictions = server_data.get('validation_predictions', {})
-        server.validation_MSE = server_data.get('validation_MSE', {})
+        server.test_predictions = server_data.get('test_predictions', {})
+        server.test_MSE = server_data.get('test_MSE', {})
 
         # Load model
         server.global_model.load_state_dict(torch.load(f'{config.SAVE_DATA_PATH}/{filename}_model.pt', weights_only = True))
@@ -315,8 +356,8 @@ def check_server():
         
     server.run(client_fraction = 1)
 
-    logger.info(f'Starting validation phase')
-    server.run_validation(dataset_index = 1, days_count = 10)
-    # server.plot()
+    logger.info(f'Starting test phase')
+    server.run_test(dataset_index = 1, days_count = 10)
+    server.plot()
     
     logger.info('Server check ended successfully')

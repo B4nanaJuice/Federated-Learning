@@ -1,8 +1,5 @@
 # Imports
-import random as rd
-from typing import Dict, List
-import torch
-import torch.nn as nn
+from typing import Dict
 
 from app.models.client import Client
 from app.models.malicious_entity import MaliciousEntity
@@ -11,10 +8,10 @@ from config import create_logger
 logger = create_logger(__name__)
 
 class MaliciousClient(Client, MaliciousEntity):
-    def __init__(self, client_id: int, **kwargs):
+    def __init__(self, client_id: int | str, **kwargs):
 
         Client.__init__(self, client_id, **kwargs)
-        MaliciousClient.__init__(self, **kwargs)
+        MaliciousEntity.__init__(self, **kwargs)
     
     def send_update(self) -> Dict:
         
@@ -28,9 +25,19 @@ class MaliciousClient(Client, MaliciousEntity):
 def check_malicious_client():
     logger.info('Starting malicious client check')
 
-    client: MaliciousClient = MaliciousClient(client_id = 1, batch_size = 128, attack_rate = .5)
+    client: MaliciousClient = MaliciousClient(client_id = 1, batch_size = 128, attack_rate = .5, local_epochs = 30)
     client.train_local()
 
-    logger.info(f'Model training time: {client.compute_time:.1f}s')
-    logger.info(f'Model MSE loss: {client.train_loss:.4f}')
+    compute_time = client.compute_time
+    mse = client.train_loss
+    mae = sum(client.MAE)/len(client.MAE)
+    rmse = sum(client.RMSE)/len(client.RMSE)
+
+    logger.info(f'Compute time : {compute_time:.8f}')
+    logger.info(f'Train loss (MSE) : {mse:.8f}')
+    logger.info(f'MAE : {mae:.8f}')
+    logger.info(f'RMSE : {rmse:.8f}')
+
+    client.plot()
+    
     logger.info('Malicious client check ended successfully')
