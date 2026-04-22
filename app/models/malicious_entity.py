@@ -2,7 +2,7 @@
 import torch
 import random as rd
 import torch.nn as nn
-from typing import List, Dict
+from typing import List, Dict, Callable
 
 from config import create_logger
 
@@ -10,11 +10,11 @@ logger = create_logger(__name__)
 
 class MaliciousEntity:
     def __init__(self, 
-                 attack_rate: float = .2, 
+                 attack_rate: float | Callable = .2, 
                  attack_method: str = 'uniform_weights',
                  **kwargs
                 ):
-        self.attack_rate: float = attack_rate
+        self.attack_rate: float | Callable = attack_rate
         self.attack_method: str = attack_method
         self.attacked_rounds: List[int] = []
 
@@ -53,6 +53,10 @@ class MaliciousEntity:
                 return model
             
     def can_attack(self) -> bool:
+        round_value = getattr(self, 'round_id', getattr(self, 'current_round', None))
+
+        if callable(self.attack_rate) and round_value:
+            return self.attack_rate(round_value)
         return rd.random() < self.attack_rate
     
     def send_attacked_rounds(self) -> List[int]:
