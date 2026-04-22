@@ -9,13 +9,13 @@ The project is currently in its early stages. The foundational data preprocessin
 
 ### 📋 Development Roadmap
 
-- [ ] **Attack Mechanisms Implementation**
-    - [ ] Data poisoning attack module
-    - [ ] Byzantine attack implementation
+- [x] **Attack Mechanisms Implementation**
+    - [x] Model poisoning attack module at client's side
+    - [x] Model poisoning attack module at server's side
     
 - [ ] **Defense Strategies**
-    - [ ] Anomaly detection for poisoned updates
     - [ ] Scoring method for clients and server
+    - [ ] Anomaly detection for poisoned updates
     - [ ] Degraded federated learning mode
     
 - [x] **Federated Learning Core**
@@ -39,7 +39,7 @@ Smart grids integrate distributed energy resources, IoT sensors, and machine lea
 
 ### Why Test Defense Mechanisms?
 Federated learning preserves privacy by keeping data local, but the training process remains vulnerable to:
-- **Data poisoning attacks**: Malicious clients inject corrupted data to compromise model quality
+- **Data poisoning attacks**: Malicious clients modify model's weights to compromise overall performance
 - **Byzantine failures**: Compromised clients send adversarial gradients
 
 Testing robust defense mechanisms ensures the system maintains both **model accuracy** and **data privacy** under realistic threat scenarios.
@@ -48,12 +48,15 @@ Testing robust defense mechanisms ensures the system maintains both **model accu
 ```
 Federated-Learning/
 ├── app/
-│   └── models/
-│       ├── client.py            # Class for federated client
-│       ├── malicious_client.py  # Class for federated client
-│       ├── dataloader.py        # Dataloader class for data splitting and batchs 
-│       ├── model.py             # ML models creation
-│       └── server.py            # Class for centralized server
+│   ├── models/
+│   │   ├── malicious_entity.py  # Class for malicious entity
+│   │   ├── client.py            # Class for federated client
+│   │   ├── malicious_client.py  # Class for malicious federated client
+│   │   ├── dataloader.py        # Dataloader class for data splitting and batchs 
+│   │   ├── model.py             # ML models creation
+│   │   ├── server.py            # Class for centralized server
+│   │   └── attacked_server.py   # Class for attacked centralized server
+│   └── simulation.py            # File with simulations
 ├── config/
 │   ├── logger.py                # Configuration for a logger
 │   └── settings.py              # Project configuration
@@ -66,10 +69,12 @@ Federated-Learning/
 │   │   │   └── building_*.pt
 │   │   └── test/
 │   │       └── building_*.pt
-│   └── preprocessing.py    # Methods for preprocessing raw data
+│   └── preprocessing.py         # Methods for preprocessing raw data
+├── logs/                        # Logs 
+├── save/                        # Directory for saving server state and gobal model
 ├── README.md
-├── requirements.txt        # Libraries requirement for the project
-└── run.py                  # Entry point for simulations, checks and data preprocessing
+├── requirements.txt             # Libraries requirement for the project
+└── run.py                       # Entry point for simulations, checks and data preprocessing
 ```
 
 **Key directories:**
@@ -231,3 +236,22 @@ These `.pt` files can be directly loaded during model training and testing using
 
 ---
 ## 📥 Installation and setup guide
+### Installation part
+In order to install and use the repository, you'll need `python 3.14.0`, you can check your python version by doing :
+```
+python --version
+```
+You can then clone the repository with :
+```
+git clone https://github.com/B4nanaJuice/Federated-Learning.git
+```
+Once the repository cloned, you can create your virtual environment and activate it with :
+```
+python -m venv venv
+./venv/Scripts/activate
+```
+After enabling your virtual environment, you can install all required libraries :
+```
+pip install -r ./requirements.txt
+```
+### Setup part
