@@ -38,13 +38,15 @@ if __name__ == "__main__":
 
         case 'test':
             logger.info('Running test simulation...')
-            from app import simulate_clean, simulate_malicious_clients, simulate_attacked_server
+            from app import simulate_clean, simulate_malicious_clients, simulate_attacked_server, simulate_attacked_and_malicious
             if 'clean' in sys.argv:
                 simulate_clean()
             if 'malicious-client' in sys.argv:
                 simulate_malicious_clients()
             if 'attacked-server' in sys.argv:
                 simulate_attacked_server()
+            if 'both' in sys.argv:
+                simulate_attacked_and_malicious()
 
         case _:
             print("Available commands : [preprocess, check, run-simulation, test]")
