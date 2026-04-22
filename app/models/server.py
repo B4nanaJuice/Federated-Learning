@@ -9,6 +9,7 @@ from tqdm import tqdm
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from typing import Optional, Callable, Dict, List
+from sklearn.metrics import mean_squared_error
 
 from app.models.client import Client
 from app.models.malicious_client import MaliciousClient
@@ -181,9 +182,9 @@ class Server:
 
         # Compute MSE for load, pv and net consumption
         self.test_MSE = {
-            'load': np.square(np.subtract(predictions[:, 0].cpu(), targets[:, 0].cpu())).mean().item(),
-            'pv': np.square(np.subtract(predictions[:, 1].cpu(), targets[:, 1].cpu())).mean().item(),
-            'net': np.square(np.subtract(predictions[:, 2].cpu(), targets[:, 2].cpu())).mean().item()
+            'load': mean_squared_error(self.test_predictions['load_true'], self.test_predictions['load']),
+            'pv': mean_squared_error(self.test_predictions['pv_true'], self.test_predictions['pv']),
+            'net': mean_squared_error(self.test_predictions['net_true'], self.test_predictions['net'])
         }
 
         return
@@ -192,22 +193,34 @@ class Server:
         x = np.linspace(1, self.max_rounds, self.max_rounds)
         min_loss = [min(_) for _ in self.training_loss]
         max_loss = [max(_) for _ in self.training_loss]
-        mean_loss = [sum(_)/len(_) for _ in self.training_loss]
+        mean_loss = [sum(_)/len(_) for _ in self.training_loss]                
+
+        plot.fill_between(x, min_loss, max_loss, color = "#bcbcbc", label = 'MSE Range')
+        plot.plot(x, mean_loss, label = 'Average MSE Loss', color = '#133E71')
 
         # If some registered clients are malicious, get their attacked rounds
-        attacked_rounds: Dict = {}
+        client_attacked_rounds: List[int] = []
         for client in self.client_registry.values():
             if type(client) == MaliciousClient:
                 logger.info(f'Client {client.client_id} attacked rounds: {client.send_attacked_rounds()}')
                 if len(client.send_attacked_rounds()) > 0:
-                    attacked_rounds[client.client_id] = client.send_attacked_rounds()
-                
+                    client_attacked_rounds += client.send_attacked_rounds()
 
-        plot.fill_between(x, min_loss, max_loss, color = "#bcbcbc")
-        plot.plot(x, mean_loss, label = 'Average MSE Loss', color = '#133E71')
+        if len(client_attacked_rounds) > 0:
+            plot.vlines(client_attacked_rounds, min(min_loss), max(max_loss), linestyles = 'dashed', label = 'Client attack', linewidths = 1, color = '#8AB425')
 
-        for k, v in attacked_rounds.items():
-            plot.vlines(v, min(min_loss), max(max_loss), linestyles = 'dashed', label = f'Attack', linewidths = 1, color = '#8AB425')
+        # If aggregation server is attacked, get its attacked rounds
+        server_attacked_rounds: List[int] | None = getattr(self, 'attacked_rounds', None)
+        if server_attacked_rounds:
+            plot.vlines(server_attacked_rounds, min(min_loss), max(max_loss), linestyles = 'dashed', label = 'Server attack', linewidth = 1, color = '#F59A00')
+
+        if server_attacked_rounds or len(client_attacked_rounds) > 0:
+            first_attack_round: int = min(min(server_attacked_rounds or [float('inf')]), min(client_attacked_rounds))
+            average_before_attack: list[float] = mean_loss[:first_attack_round]
+            average_before_attack: float = sum(average_before_attack)/len(average_before_attack)
+
+            plot.hlines(average_before_attack, 0, self.current_round, linestyles = 'dashed', label = 'Average loss before attack', linewidth = 1, color = '#000000')
+
 
         # Hide axes
         plot.spines['top'].set_visible(False)
@@ -216,10 +229,11 @@ class Server:
         plot.set_xlabel('Round')
         plot.set_ylabel('Mean Squared Error (MSE) loss')
         plot.set_title('Training MSE loss over rounds')
+        plot.set_yscale('log')
         return
 
     def plot_MAE(self, plot: plt.Axes) -> None:
-        plot.boxplot(self.MAE.values())
+        plot.boxplot(self.MAE.values(), medianprops = {'color': '#F59A00'})
 
         plot.spines['top'].set_visible(False)
         plot.spines['right'].set_visible(False)
@@ -228,10 +242,11 @@ class Server:
         plot.set_title('Mean Absolute Error for server\'s clients')
         plot.grid(axis = 'y')
         plot.set_xticklabels([str(_) for _ in self.RMSE.keys()])
+        plot.set_yscale('log')
         return
     
     def plot_RMSE(self, plot: plt.Axes) -> None:
-        plot.boxplot(self.RMSE.values())
+        plot.boxplot(self.RMSE.values(), medianprops = {'color': '#F59A00'})
 
         plot.spines['top'].set_visible(False)
         plot.spines['right'].set_visible(False)
@@ -240,6 +255,7 @@ class Server:
         plot.set_title('Root Mean Squared Error for server\'s clients')
         plot.grid(axis = 'y')
         plot.set_xticklabels([str(_) for _ in self.RMSE.keys()])
+        plot.set_yscale('log')
         return
     
     def plot_pred(self, plot: plt.Axes, column: str) -> None:
@@ -254,7 +270,7 @@ class Server:
         plot.legend()
         plot.set_xlabel('$\\Delta t$ (30 minutes)')
         plot.set_ylabel('Normalized value')
-        plot.set_title(f'{column.capitalize()} prediction vs. ground truth')
+        plot.set_title(f'{column.capitalize()} prediction vs. ground truth (MSE: {self.test_MSE[column]:.4f})')
         return
 
     def plot(self) -> None:
