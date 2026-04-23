@@ -33,8 +33,6 @@ if __name__ == "__main__":
 
         case 'run-simulation':
             logger.info("Running simulation...")
-            from app import simulate
-            simulate()
 
         case 'test':
             logger.info('Running test simulation...')
