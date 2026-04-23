@@ -55,8 +55,8 @@ class Server:
         self.RMSE: Dict[str, List[float]] = {}
 
         # Test phase
-        self.test_predictions: Dict = {}
-        self.test_MSE: Dict = {}
+        self.test_predictions: Dict[str, List[float]] = {}
+        self.test_MSE: Dict[str, float] = {}
 
     def register_client(self, client: Client) -> None:
         self.client_registry[client.client_id] = client
@@ -190,10 +190,10 @@ class Server:
         return
     
     def plot_test_loss(self, plot: plt.Axes) -> None:
-        x = np.linspace(1, self.max_rounds, self.max_rounds)
+        x = np.linspace(1, len(self.training_loss), len(self.training_loss))
         min_loss = [min(_) for _ in self.training_loss]
         max_loss = [max(_) for _ in self.training_loss]
-        mean_loss = [sum(_)/len(_) for _ in self.training_loss]                
+        mean_loss = [sum(_)/len(_) for _ in self.training_loss]          
 
         plot.fill_between(x, min_loss, max_loss, color = "#bcbcbc", label = 'MSE Range')
         plot.plot(x, mean_loss, label = 'Average MSE Loss', color = '#133E71')
@@ -215,7 +215,7 @@ class Server:
             plot.vlines(server_attacked_rounds, min(min_loss), max(max_loss), linestyles = 'dashed', label = 'Server attack', linewidth = 1, color = '#F59A00')
 
         if server_attacked_rounds or len(client_attacked_rounds) > 0:
-            first_attack_round: int = min(min(server_attacked_rounds or [float('inf')]), min(client_attacked_rounds))
+            first_attack_round: int = min(min(server_attacked_rounds or [float('inf')]), min(client_attacked_rounds + [float('inf')]))
             average_before_attack: list[float] = mean_loss[:first_attack_round]
             average_before_attack: float = sum(average_before_attack)/len(average_before_attack)
 
@@ -274,7 +274,7 @@ class Server:
         return
 
     def plot(self) -> None:
-        # Generate layout from show_* options
+        # Generate layout from plot_* methods
         fig = plt.figure()
         gs = mpl.gridspec.GridSpec(3, 2, wspace = .25, hspace = .5)
 
@@ -300,65 +300,42 @@ class Server:
 
         plt.show()
         return
-
-    def to_dict(self) -> Dict:
-        return {
-            'current_round': self.current_round,
-            'max_rounds': self.max_rounds,
-            'min_clients': self.min_clients,
-
-            'client_registry': [_ for _ in self.client_registry],
-
-            'global_model': str(type(self.global_model)),
-
-            'training_loss': self.training_loss,
-            'test_predictions': self.test_predictions,
-            'test_MSE': self.test_MSE
-        }
-    
-    @staticmethod
-    def save_state(server: Server, filename: str = 'server_save') -> None:
-        if filename.endswith('.json'):
-            filename = filename.replace('.json', '')
-
-        # Save the model
-        torch.save(server.global_model.state_dict(), f'{config.SAVE_DATA_PATH}/{filename}_model.pt')
-
-        # Save the server state
-        with open(f'{config.SAVE_DATA_PATH}/{filename}_state.json', mode = 'w', encoding = 'utf-8') as f:
-            f.write(json.dumps(server.to_dict()))
-        return
     
     def save_model(self, filename: str) -> None:
         torch.save(self.global_model.state_dict(), f'{config.SAVE_DATA_PATH}/{filename}.pt')
         return
-    
+
     def save_metrics(self, filename: str) -> None:
+        # Convert attributes to dict
+        metrics: Dict[str, any] = {
+            'predictions': self.test_predictions,
+            'test_MSE': self.test_MSE,
+            'training_loss': self.training_loss,
+            'MAE': self.MAE,
+            'RMSE': self.RMSE
+        }
+
+        # Save dict to file
+        with open(f'{config.SAVE_DATA_PATH}/{filename}.json', mode = 'w', encoding = 'utf-8') as f:
+            f.write(json.dumps(metrics))
         return
-    
-    @staticmethod
-    def load_state(filename: str = 'server_save') -> Server:
-        if filename.endswith('.json'):
-            filename = filename.replace('.json', '')
 
-        # Load the server
-        with open(f'{config.SAVE_DATA_PATH}/{filename}_state.json', mode = 'r', encoding = 'utf-8') as f:
-            server_data: Dict = json.load(f)
-        server: Server = Server(
-            global_model = NormalMLP() if 'NormalMLP' in server_data.get('global_model') else SoftGatedMoE(),
-            max_rounds = server_data.get('max_rounds', 20),
-            min_clients = server_data.get('min_clients', 2)
-        )
+    def load_model(self, filename: str) -> None:
+        self.global_model.load_state_dict(torch.load(f'{config.SAVE_DATA_PATH}/{filename}.pt', weights_only = True))
+        return
 
-        # Load metrics
-        server.training_loss = server_data.get('training_loss', [])
-        server.test_predictions = server_data.get('test_predictions', {})
-        server.test_MSE = server_data.get('test_MSE', {})
+    def load_metrics(self, filename: str) -> None:
+        # Load data from file
+        with open(f'{config.SAVE_DATA_PATH}/{filename}.json', mode = 'r', encoding = 'utf-8') as f:
+            metrics: Dict[str, any] = json.loads(f.read())
 
-        # Load model
-        server.global_model.load_state_dict(torch.load(f'{config.SAVE_DATA_PATH}/{filename}_model.pt', weights_only = True))
-
-        return server
+        # Load metrics from dict
+        self.test_predictions = metrics.get('predictions', {})
+        self.test_MSE = metrics.get('test_MSE', {})
+        self.training_loss = metrics.get('training_loss', [])
+        self.MAE = metrics.get('MAE', {})
+        self.RMSE = metrics.get('RMSE', {})
+        return
 
 def check_server():
     logger.info('Starting server check')
@@ -374,6 +351,18 @@ def check_server():
 
     logger.info(f'Starting test phase')
     server.run_test(dataset_index = 1, days_count = 10)
-    server.plot()
-    
+    # server.plot()
+
+    server.save_model('check_server')
+    server.save_metrics('check_server')
+
+    _s: Server = Server(NormalMLP())
+    _s.load_metrics('check_server')
+    # _s.plot()
+
+    assert _s.training_loss is not None
+    assert _s.test_MSE is not None
+    assert len(_s.test_predictions) == len(server.test_predictions)
+    assert len(_s.MAE) == len(server.MAE), f'Size of _s.MAE should be the same as origin server\'s MAE ({len(_s.MAE)} =/= {len(server.MAE)})'
+
     logger.info('Server check ended successfully')
