@@ -1,11 +1,8 @@
 # Imports
-from dotenv import load_dotenv
-import os
 import torch
 
 from config.logger import create_logger
 
-load_dotenv()
 logger = create_logger(__name__)
 
 # Create config class
@@ -48,7 +45,7 @@ def _get_config() -> BaseConfig:
         'test': BaseConfig(),
     }
 
-    env: str = os.getenv('ENV', 'test')
+    env: str = 'test'
     _config: BaseConfig = _config_map.get(env, BaseConfig())
     logger.info(f"Using config for environment: {env}")
     return _config
