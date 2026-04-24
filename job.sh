@@ -10,13 +10,12 @@
 #SBATCH --output=job.%J.out
 
 romeo_load_armgpu_env
-spack load python@3.14.3
+spack load python@3.11.9
 spack load cuda/12.6
 
 source /gpfs/home/griesmax/venv/bin/activate
 
 mkdir -p logs
-mkdir -p save
 
 python run.py run-simulation \
     --run-count 10 \
