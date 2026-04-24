@@ -12,7 +12,6 @@ from typing import Optional, Callable, Dict, List
 from sklearn.metrics import mean_squared_error
 
 from app.models.client import Client
-from app.models.malicious_client import MaliciousClient
 from app.models.model import NormalMLP, SoftGatedMoE
 from app.models.dataloader import EnergyDataset
 from config import create_logger, config
@@ -201,7 +200,7 @@ class Server:
         # If some registered clients are malicious, get their attacked rounds
         client_attacked_rounds: List[int] = []
         for client in self.client_registry.values():
-            if type(client) == MaliciousClient:
+            if getattr(client, 'attacked_rounds', None):
                 logger.info(f'Client {client.client_id} attacked rounds: {client.send_attacked_rounds()}')
                 if len(client.send_attacked_rounds()) > 0:
                     client_attacked_rounds += client.send_attacked_rounds()

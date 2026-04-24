@@ -1,11 +1,10 @@
 # Imports
-import copy
 import torch
 import torch.nn as nn
-from typing import Dict, List
+from typing import Dict
 
 from app.models.server import Server
-from app.models.malicious_entity import MaliciousEntity
+from app.attacking_models.malicious_entity import MaliciousEntity
 
 class AttackedServer(Server, MaliciousEntity):
     def __init__(self, global_model: nn.Module, **kwargs):

@@ -1,7 +1,8 @@
 # Imports
 from typing import List
 
-from app.models import Client, Server, NormalMLP, MaliciousClient, AttackedServer
+from app.models import Client, Server, NormalMLP
+from app.attacking_models import MaliciousClient, AttackedServer
 from config import create_logger
 
 logger = create_logger(__name__)

@@ -2,7 +2,7 @@
 from typing import Dict
 
 from app.models.client import Client
-from app.models.malicious_entity import MaliciousEntity
+from app.attacking_models.malicious_entity import MaliciousEntity
 from config import create_logger
 
 logger = create_logger(__name__)
