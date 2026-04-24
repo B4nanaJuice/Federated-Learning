@@ -34,7 +34,7 @@ if __name__ == "__main__":
         case 'run-simulation':
             logger.info("Running simulation...")
             if len(sys.argv) % 2 != 0:
-                print('Error')
+                raise Exception('Each option should be named')
 
             options: dict = {
                 sys.argv[2*_].replace('--', '') : sys.argv[2*_+1]

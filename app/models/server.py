@@ -316,7 +316,7 @@ class Server:
 
         # Save dict to file
         with open(f'{config.SAVE_DATA_PATH}/{filename}.json', mode = 'w', encoding = 'utf-8') as f:
-            f.write(json.dumps(metrics))
+            f.write(json.dumps(metrics, indent = 4))
         return
 
     def load_model(self, filename: str) -> None:
