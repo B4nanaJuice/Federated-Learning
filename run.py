@@ -33,6 +33,16 @@ if __name__ == "__main__":
 
         case 'run-simulation':
             logger.info("Running simulation...")
+            if len(sys.argv) % 2 != 0:
+                print('Error')
+
+            options: dict = {
+                sys.argv[2*_].replace('--', '') : sys.argv[2*_+1]
+                for _ in range(1, len(sys.argv)//2)
+            }
+
+            from app import multi_run
+            multi_run(**options)
 
         case 'test':
             logger.info('Running test simulation...')

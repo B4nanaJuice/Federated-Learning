@@ -1,5 +1,6 @@
 # Imports
 from typing import List
+from tqdm import tqdm
 
 from app.models import Client, Server, NormalMLP
 from app.attacking_models import MaliciousClient, AttackedServer
@@ -117,3 +118,8 @@ def simulate_attacked_and_malicious():
     server.plot()
 
     logger.info('End of attacked server and malicious clients simulation')
+
+def multi_run(**options):
+    
+    for run in tqdm(range(options.get('run-count', 5))):
+        print(run)
