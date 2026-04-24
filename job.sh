@@ -11,7 +11,7 @@
 
 romeo_load_armgpu_env
 spack load python@3.11.9/oxq4fb7
-spack load cuda
+spack load cuda@12.6.2
 
 source /gpfs/home/griesmax/Federated-Learning/venv/bin/activate
 
