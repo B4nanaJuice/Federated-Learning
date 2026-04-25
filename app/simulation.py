@@ -1,5 +1,5 @@
 # Imports
-from typing import List, Callable
+from typing import List, Callable, Dict
 from tqdm import tqdm
 
 from app.models import Client, Server, NormalMLP, SoftGatedMoE
@@ -194,3 +194,13 @@ def multi_run(**options):
         server.run(client_fraction = client_fraction)
         server.run_test()
         server.save_metrics(f'{save_filename}_{run}')
+
+def data_grouping(save_filename: str, run_count: int) -> Dict:
+    # Create variables
+
+    # Loop over files and add to variables
+
+    # Average variables
+
+    # Return dict
+    return {}
