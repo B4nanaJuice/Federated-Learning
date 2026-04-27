@@ -17,6 +17,7 @@ class MaliciousClient(Client, MaliciousEntity):
         
         if self.can_attack():
             self.model.load_state_dict(self.poison_model(self.model, self.attack_method))
+            self.model.load_state_dict(self.poison_model(self.model, self.attack_method, self.partial_attack))
             self.attacked_rounds.append(self.round_id)
         
         # return super(Client, self).send_update()

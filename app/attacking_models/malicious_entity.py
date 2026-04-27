@@ -12,45 +12,38 @@ class MaliciousEntity:
     def __init__(self, 
                  attack_rate: float | Callable = .2, 
                  attack_method: str = 'uniform_weights',
+                 partial_attack: bool = False,
                  **kwargs
                 ):
         self.attack_rate: float | Callable = attack_rate
         self.attack_method: str = attack_method
         self.attacked_rounds: List[int] = []
+        self.partial_attack: bool = partial_attack
 
     @staticmethod
-    def poison_model(model: nn.Module, attack_method: str) -> Dict[str, torch.Tensor]:
+    def poison_model(model: nn.Module, attack_method: str, partial: bool = False) -> Dict[str, torch.Tensor]:
         
         model: Dict[str, torch.Tensor] = model.state_dict()
+        keys: List = list(model.keys())
+        target_keys: List = keys[-1:] if partial else keys
 
         match attack_method:
             case 'gaussian_noise':
-                for k, layer in model.items():
-                    model[k] += torch.randn_like(layer)
-
-                return model
-
+                fn = lambda layer: model[layer] + torch.randn_like(model[layer])
             case 'gaussian_weights':
-                for k, layer in model.items():
-                    model[k] = torch.randn_like(layer)
-
-                return model
-            
+                fn = lambda layer: torch.randn_like(model[layer])
             case 'uniform_noise':
-                for k, layer in model.items():
-                    model[k] += torch.rand_like(layer)
-
-                return model
-
+                fn = lambda layer: model[layer] + torch.rand_like(model[layer])
             case 'uniform_weights':
-                for k, layer in model.items():
-                    model[k] = torch.rand_like(layer)
-
-                return model
-
+                fn = lambda layer: torch.rand_like(model[layer])
             case _:
                 logger.warning(f'Unknown attack method {attack_method}.')
                 return model
+            
+        for k in target_keys:
+            model[k] = fn(k)
+
+        return model
             
     def can_attack(self) -> bool:
         round_value = getattr(self, 'round_id', getattr(self, 'current_round', None))

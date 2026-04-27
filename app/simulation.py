@@ -130,6 +130,7 @@ def multi_run(**options):
     min_clients: int = int(options.get('min-clients', 10))
     server_attack_rate: float | Callable = eval(options.get('server-attack-rate', '.2'))
     server_attack_method: str = options.get('server-attack-method', 'uniform_noise')
+    partial_attack: bool = options.get('partial-attack', 'False') == 'True'
 
     total_clients: int = int(options.get('total-clients', 10))
     malicious_client_count: int = int(options.get('malicious-client-count', 0))
@@ -156,6 +157,7 @@ def multi_run(**options):
                 min_clients = min_clients,
                 attack_rate = server_attack_rate,
                 attack_method = server_attack_method
+                partial_attack = partial_attack
             )
         else:
             server: Server = Server(
@@ -189,6 +191,7 @@ def multi_run(**options):
                 learning_rate = learning_rate,
                 attack_rate = client_attack_rate,
                 attack_method = client_attack_method
+                partial_attack = partial_attack,
             ))
 
         server.register_clients(clients = clients)
