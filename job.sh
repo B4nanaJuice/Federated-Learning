@@ -6,11 +6,11 @@
 #SBATCH --nodes=2
 #SBATCH --cpus-per-task=1
 #SBATCH --gpus-per-node=1
-#SBATCH --error=job.%J.err
-#SBATCH --output=job.%J.out
+#SBATCH --error=output/job.%J.err
+#SBATCH --output=output/job.%J.out
 
 romeo_load_armgpu_env
-spack load python@3.11.9/esusxhd
+spack load python@3.11.9/oxq4fb7
 
 mkdir -p output
 source /gpfs/home/griesmax/Federated-Learning/venv/bin/activate
