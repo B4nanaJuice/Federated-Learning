@@ -19,7 +19,8 @@ if __name__ == "__main__":
             
         case 'check':
             logger.info("Running checks...")
-            from app.models import check_dataset, check_models, check_client, check_server, check_malicious_client
+            from app.models import check_dataset, check_models, check_client, check_server
+            from app.attacking_models import check_malicious_client
             if 'models' in sys.argv:
                 check_models()
             if 'dataset' in sys.argv:

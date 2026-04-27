@@ -19,7 +19,7 @@ logger = create_logger(__name__)
 class Client:
     def __init__(self, 
                  client_id: int | str, 
-                 model: NormalMLP | SoftGatedMoE = NormalMLP(), 
+                 model: nn.Module = NormalMLP(), 
                  local_epochs: int = 5, 
                  batch_size: int = 32,
                  learning_rate: float = 0.001,
