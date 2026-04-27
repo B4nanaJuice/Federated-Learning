@@ -139,6 +139,7 @@ def multi_run(**options):
     learning_rate: float = float(options.get('lr', 1e-3))
     client_attack_rate: float | Callable = eval(options.get('client-attack-rate', '.2'))
     client_attack_method: str = options.get('client-attack-method', 'uniform_noise')
+    client_attack_target: str = options.get('client-attack-target', 'model')
     client_fraction: float = float(options.get('client-fraction', .5))
 
     save_filename: str = options.get('save-filename', 'multi_run')
@@ -156,7 +157,7 @@ def multi_run(**options):
                 max_rounds = max_rounds,
                 min_clients = min_clients,
                 attack_rate = server_attack_rate,
-                attack_method = server_attack_method
+                attack_method = server_attack_method,
                 partial_attack = partial_attack
             )
         else:
@@ -190,8 +191,9 @@ def multi_run(**options):
                 batch_size = batch_size,
                 learning_rate = learning_rate,
                 attack_rate = client_attack_rate,
-                attack_method = client_attack_method
+                attack_method = client_attack_method,
                 partial_attack = partial_attack,
+                attack_target = client_attack_target
             ))
 
         server.register_clients(clients = clients)
