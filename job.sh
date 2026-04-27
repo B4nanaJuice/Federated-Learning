@@ -13,6 +13,6 @@ romeo_load_armgpu_env
 spack load python@3.11.9/esusxhd
 
 mkdir -p output
-source /gpfs/home/griesmax/venv/bin/activate
+source /gpfs/home/griesmax/Federated-Learning/venv/bin/activate
 
 python run.py run-simulation --run-count 10 --max-rounds 20 --total-clients 20 --malicious-client-count 0 --client-fraction 0.5 --epochs 15 --save-filename "clean_run"
