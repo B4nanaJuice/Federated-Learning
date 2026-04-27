@@ -76,4 +76,4 @@ if __name__ == "__main__":
             show_simulation_results('clean_run_grouped')
 
         case _:
-            print("Available commands : [preprocess, check, run-simulation, test]")
+            print("Available commands : [preprocess, check, run-simulation, test, group-data, show-results]")
