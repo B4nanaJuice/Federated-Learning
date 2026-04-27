@@ -19,3 +19,6 @@ logs/
 # Saves
 save/*.pt
 save/*.json
+
+# Temp documentation
+documentation/

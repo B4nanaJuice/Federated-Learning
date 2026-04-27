@@ -13,7 +13,7 @@ class MaliciousClient(Client, MaliciousEntity):
 
         Client.__init__(self, client_id, **kwargs)
         MaliciousEntity.__init__(self, **kwargs)
-        self.attack_target: str = self.attack_target
+        self.attack_target: str = attack_target
     
     def send_update(self) -> Dict:
         
