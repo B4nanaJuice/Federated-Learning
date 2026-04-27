@@ -56,5 +56,23 @@ if __name__ == "__main__":
             if 'both' in sys.argv:
                 simulate_attacked_and_malicious()
 
+        case 'group-data':
+            logger.info('Running data grouping...')
+            if len(sys.argv) % 2 != 0:
+                raise Exception('Each option should be named')
+
+            options: dict = {
+                sys.argv[2*_].replace('--', '') : sys.argv[2*_+1]
+                for _ in range(1, len(sys.argv)//2)
+            }
+
+            from app import data_grouping
+            data_grouping(**options)
+
+        case 'show-results':
+            logger.info('Show multirun results...')
+            from app import show_simulation_results
+            show_simulation_results('clean_run_grouped')
+
         case _:
             print("Available commands : [preprocess, check, run-simulation, test]")

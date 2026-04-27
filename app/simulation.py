@@ -1,10 +1,12 @@
 # Imports
 from typing import List, Callable, Dict
 from tqdm import tqdm
+import numpy as np
+import json
 
 from app.models import Client, Server, NormalMLP, SoftGatedMoE
 from app.attacking_models import MaliciousClient, AttackedServer
-from config import create_logger
+from config import create_logger, config
 
 logger = create_logger(__name__)
 
@@ -195,12 +197,89 @@ def multi_run(**options):
         server.run_test()
         server.save_metrics(f'{save_filename}_{run}')
 
-def data_grouping(save_filename: str, run_count: int) -> Dict:
-    # Create variables
+def data_grouping(**options) -> None:
 
-    # Loop over files and add to variables
+    save_filename: str = options.get('save-filename', 'run')
+    run_count: int = int(options.get('run-count', 5))
 
-    # Average variables
+    predictions: Dict[str, np.ndarray] = {
+        'load': np.array([]),
+        'pv': np.array([]),
+        'net': np.array([])
+    }
 
-    # Return dict
-    return {}
+    test_MSE: Dict[str, float] = {
+        'load': 0.0,
+        'pv': 0.0,
+        'net': 0.0
+    }
+
+    MAE: Dict[str, List[float]] = {}
+    RMSE: Dict[str, List[float]] = {}
+
+    training_loss: List[List[float]] = None
+
+    for _ in range(run_count):
+        with open(f'{config.SAVE_DATA_PATH}/{save_filename}_{_}.json', mode = 'r', encoding = 'utf-8') as f:
+            data: Dict = json.load(fp = f)
+
+        if predictions['load'].shape[0] == 0:
+            predictions['load'] = np.array(data['predictions']['load'], dtype = np.float32)
+            predictions['pv'] = np.array(data['predictions']['pv'], dtype = np.float32)
+            predictions['net'] = np.array(data['predictions']['net'], dtype = np.float32)
+        else:
+            predictions['load'] += np.array(data['predictions']['load'], dtype = np.float32)
+            predictions['pv'] += np.array(data['predictions']['pv'], dtype = np.float32)
+            predictions['net'] += np.array(data['predictions']['net'], dtype = np.float32)
+
+        test_MSE['load'] += data['test_MSE']['load']
+        test_MSE['pv'] += data['test_MSE']['pv']
+        test_MSE['net'] += data['test_MSE']['net']
+
+        if not training_loss:
+            training_loss = data['training_loss']
+        else:
+            for _ in range(len(data['training_loss'])):
+                training_loss[_] += data['training_loss'][_]
+
+        for k in data['MAE'].keys():
+            if k not in MAE:
+                MAE[k] = []
+                RMSE[k] = []
+
+            MAE[k] += data['MAE'][k]
+            RMSE[k] += data['RMSE'][k]
+
+    predictions['load'] /= run_count
+    predictions['pv'] /= run_count
+    predictions['net'] /= run_count
+    predictions['load_true'] = data['predictions']['load_true']
+    predictions['pv_true'] = data['predictions']['pv_true']
+    predictions['net_true'] = data['predictions']['net_true']
+
+    test_MSE['load'] /= run_count
+    test_MSE['pv'] /= run_count
+    test_MSE['net'] /= run_count
+
+    output_data: Dict = {
+        'predictions': {
+            k: v.tolist() if type(v) == np.ndarray else v
+            for k, v in predictions.items()
+        },
+        'test_MSE': test_MSE,
+        'training_loss': training_loss,
+        'MAE': MAE,
+        'RMSE': RMSE
+    }
+
+    with open(f'{config.SAVE_DATA_PATH}/{save_filename}_grouped.json', mode = 'w', encoding = 'utf-8') as f:
+        f.write(json.dumps(output_data, indent = 4))
+
+    return
+
+def show_simulation_results(filename: str) -> None:
+    server: Server = Server(global_model = NormalMLP())
+    server.load_metrics(filename)
+    server.plot()
+    return
+    
