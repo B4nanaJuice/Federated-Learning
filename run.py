@@ -73,7 +73,7 @@ if __name__ == "__main__":
         case 'show-results':
             logger.info('Show multirun results...')
             from app import show_simulation_results
-            show_simulation_results('clean_run_grouped')
+            show_simulation_results('20%_clients_data_grouped')
 
         case _:
             print("Available commands : [preprocess, check, run-simulation, test, group-data, show-results]")
