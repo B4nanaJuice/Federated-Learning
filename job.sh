@@ -10,7 +10,7 @@
 #SBATCH --output=output/job.%J.out
 
 romeo_load_armgpu_env
-spack load python@3.11.9/oxq4fb7
+spack load py-pip ^python@3.11.9
 
 mkdir -p output
 source /gpfs/home/griesmax/Federated-Learning/venv/bin/activate
