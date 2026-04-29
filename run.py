@@ -5,75 +5,96 @@ from config import create_logger
 
 logger = create_logger(__name__)
 
-if __name__ == "__main__":
+COMMANDS = ['preprocess', 'check', 'run-simulation', 'test', 'group-data', 'show-results']
 
+
+def parse_named_options(args: list[str]) -> dict:
+    """Parse --key value pairs from argument list."""
+    if len(args) % 2 != 0:
+        raise ValueError("Each option must be a --key value pair.")
+    return {
+        args[2 * i].lstrip('-'): args[2 * i + 1]
+        for i in range(len(args) // 2)
+    }
+
+
+def cmd_preprocess():
+    logger.info("Running data preprocessing...")
+    from data import run_preprocessing
+    run_preprocessing()
+
+
+def cmd_check(args: list[str]):
+    logger.info("Running checks...")
+    from app.models import check_dataset, check_models, check_client, check_server
+    from app.attacking_models import check_malicious_client
+
+    checks = {
+        'models':          check_models,
+        'dataset':         check_dataset,
+        'client':          check_client,
+        'malicious-client': check_malicious_client,
+        'server':          check_server,
+    }
+    for flag, fn in checks.items():
+        if flag in args:
+            fn()
+
+
+def cmd_run_simulation(args: list[str]):
+    logger.info("Running simulation...")
+    options = parse_named_options(args)
+    from app import multi_run
+    multi_run(**options)
+
+
+def cmd_test(args: list[str]):
+    logger.info("Running test simulation...")
+    from app import simulate_clean, simulate_malicious_clients, simulate_attacked_server, simulate_attacked_and_malicious
+
+    tests = {
+        'clean':            simulate_clean,
+        'malicious-client': simulate_malicious_clients,
+        'attacked-server':  simulate_attacked_server,
+        'both':             simulate_attacked_and_malicious,
+    }
+    for flag, fn in tests.items():
+        if flag in args:
+            fn()
+
+
+def cmd_group_data(args: list[str]):
+    logger.info("Running data grouping...")
+    options = parse_named_options(args)
+    from app import data_grouping
+    data_grouping(**options)
+
+
+def cmd_show_results():
+    logger.info("Showing multirun results...")
+    from app.plots import compare_loss
+    compare_loss([
+        'clean_run_grouped',
+        '5%_clients_data_grouped',
+        '20%_clients_data_grouped',
+        '5%_clients_model_0',
+    ])
+
+
+if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: python run.py <command>")
+        print(f"Usage: python run.py <command>\nAvailable commands: {', '.join(COMMANDS)}")
         sys.exit(1)
 
-    match sys.argv[1]:
-        case 'preprocess':
-            logger.info("Running data preprocessing...")
-            from data import run_preprocessing
-            run_preprocessing()
-            
-        case 'check':
-            logger.info("Running checks...")
-            from app.models import check_dataset, check_models, check_client, check_server
-            from app.attacking_models import check_malicious_client
-            if 'models' in sys.argv:
-                check_models()
-            if 'dataset' in sys.argv:
-                check_dataset()
-            if 'client' in sys.argv:
-                check_client()
-            if 'malicious-client' in sys.argv:
-                check_malicious_client()
-            if 'server' in sys.argv:
-                check_server()
+    command, *extra_args = sys.argv[1:]
 
-        case 'run-simulation':
-            logger.info("Running simulation...")
-            if len(sys.argv) % 2 != 0:
-                raise Exception('Each option should be named')
-
-            options: dict = {
-                sys.argv[2*_].replace('--', '') : sys.argv[2*_+1]
-                for _ in range(1, len(sys.argv)//2)
-            }
-
-            from app import multi_run
-            multi_run(**options)
-
-        case 'test':
-            logger.info('Running test simulation...')
-            from app import simulate_clean, simulate_malicious_clients, simulate_attacked_server, simulate_attacked_and_malicious
-            if 'clean' in sys.argv:
-                simulate_clean()
-            if 'malicious-client' in sys.argv:
-                simulate_malicious_clients()
-            if 'attacked-server' in sys.argv:
-                simulate_attacked_server()
-            if 'both' in sys.argv:
-                simulate_attacked_and_malicious()
-
-        case 'group-data':
-            logger.info('Running data grouping...')
-            if len(sys.argv) % 2 != 0:
-                raise Exception('Each option should be named')
-
-            options: dict = {
-                sys.argv[2*_].replace('--', '') : sys.argv[2*_+1]
-                for _ in range(1, len(sys.argv)//2)
-            }
-
-            from app import data_grouping
-            data_grouping(**options)
-
-        case 'show-results':
-            logger.info('Show multirun results...')
-            from app import show_simulation_results
-            show_simulation_results('20%_clients_data_grouped')
-
+    match command:
+        case 'preprocess':      cmd_preprocess()
+        case 'check':           cmd_check(extra_args)
+        case 'run-simulation':  cmd_run_simulation(extra_args)
+        case 'test':            cmd_test(extra_args)
+        case 'group-data':      cmd_group_data(extra_args)
+        case 'show-results':    cmd_show_results()
         case _:
-            print("Available commands : [preprocess, check, run-simulation, test, group-data, show-results]")
+            print(f"Unknown command: '{command}'\nAvailable commands: {', '.join(COMMANDS)}")
+            sys.exit(1)
