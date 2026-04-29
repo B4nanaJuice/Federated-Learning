@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #SBATCH --account="r260042"
-#SBATCH --time=5:30:00
+#SBATCH --time=1:00:00
 #SBATCH --mem=16G
 #SBATCH --constraint=armgpu
 #SBATCH --nodes=2
@@ -18,7 +18,7 @@ mkdir -p output
 source /gpfs/home/griesmax/Federated-Learning/venv/bin/activate
 
 # 5% malicious clients attacking their data continuously
-python run.py run-simulation --run-count 10 \
+python run.py run-simulation --run-count 1 \
     --max-rounds 20 \
     --total-clients 20 \
     --malicious-client-count 4 \

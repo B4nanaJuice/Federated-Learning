@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #SBATCH --account="r260042"
-#SBATCH --time=5:30:00
+#SBATCH --time=1:00:00
 #SBATCH --mem=16G
 #SBATCH --constraint=armgpu
 #SBATCH --nodes=2
@@ -17,4 +17,4 @@ spack load py-pip ^python@3.11.9
 mkdir -p output
 source /gpfs/home/griesmax/Federated-Learning/venv/bin/activate
 
-python run.py run-simulation --run-count 10 --max-rounds 20 --total-clients 20 --malicious-client-count 0 --client-fraction 0.5 --epochs 15 --save-filename "clean_run"
+python run.py run-simulation --run-count 1 --max-rounds 20 --total-clients 20 --malicious-client-count 0 --client-fraction 0.5 --epochs 15 --save-filename "clean_run"
