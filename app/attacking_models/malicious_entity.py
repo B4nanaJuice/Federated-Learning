@@ -36,9 +36,9 @@ class MaliciousEntity:
                 fn = lambda layer: model[layer] + torch.rand_like(model[layer])
             case 'uniform_weights':
                 fn = lambda layer: torch.rand_like(model[layer])
-            case 'gradient-inversion':
+            case 'gradient_inversion':
                 fn = lambda layer: model[layer] * -1
-            case 'gradient-amplification':
+            case 'gradient_amplification':
                 fn = lambda layer: model[layer] * 3
             case _:
                 logger.warning(f'Unknown attack method {attack_method}.')

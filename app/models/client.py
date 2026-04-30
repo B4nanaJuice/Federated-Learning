@@ -197,5 +197,5 @@ def check_client():
     logger.info(f'RMSE : {rmse:.8f}')
 
     client.plot()
-
+    
     logger.info('Client check ended successfully')

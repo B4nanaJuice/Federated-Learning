@@ -1,3 +1,4 @@
 # Imports
 from app.attacking_models.malicious_client import MaliciousClient, check_malicious_client
 from app.attacking_models.attacked_server import AttackedServer
+from app.attacking_models.malicious_entity import MaliciousEntity

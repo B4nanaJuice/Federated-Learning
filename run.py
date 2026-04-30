@@ -28,6 +28,7 @@ def cmd_check(args: list[str]):
     logger.info("Running checks...")
     from app.models import check_dataset, check_models, check_client, check_server
     from app.attacking_models import check_malicious_client
+    from app.scoring import check_scoring_entity
 
     checks = {
         'models':          check_models,
@@ -35,6 +36,7 @@ def cmd_check(args: list[str]):
         'client':          check_client,
         'malicious-client': check_malicious_client,
         'server':          check_server,
+        'scoring':         check_scoring_entity
     }
     for flag, fn in checks.items():
         if flag in args:
@@ -72,12 +74,13 @@ def cmd_group_data(args: list[str]):
 
 def cmd_show_results():
     logger.info("Showing multirun results...")
-    from app.plots import compare_loss
-    compare_loss([
+    from app.plots import compare_loss, compare_MSE
+    compare_MSE([
         'clean_run_grouped',
-        '5%_clients_data_grouped',
-        '20%_clients_data_grouped',
-        '5%_clients_model_0',
+        '5%_clients_model_grouped',
+        '20%_clients_model_grouped',
+        'clients_gradient_inversion_grouped',
+        'clients_gradient_amplification_grouped'
     ])
 
 
