@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 #SBATCH --account="r260042"
-#SBATCH --time=5:30:00
+#SBATCH --time=6:00:00
 #SBATCH --mem=16G
 #SBATCH --constraint=armgpu
 #SBATCH --nodes=2
 #SBATCH --cpus-per-task=1
 #SBATCH --gpus-per-node=1
-#SBATCH --job-name "20% model"
-#SBATCH --comment "Clean run with 10 simulations, 20 total clients and 4 malicious clients, 10 clients per round for 20 rounds"
+#SBATCH --job-name "Chaos"
+#SBATCH --comment "One-shot total attack on server's global model"
 #SBATCH --error=output/job.%J.err
 #SBATCH --output=output/job.%J.out
 
@@ -17,12 +17,13 @@ spack load py-pip ^python@3.11.9
 mkdir -p output
 source /gpfs/home/griesmax/Federated-Learning/venv/bin/activate
 
-# 5% malicious clients attacking their data continuously
+# Attacker that has total access on server's model
 python run.py run-simulation --run-count 10 \
     --max-rounds 20 \
     --total-clients 20 \
-    --malicious-client-count 4 \
+    --malicious-client-count 0 \
     --client-fraction 0.5 \
     --epochs 15 \
-    --save-filename "20%_clients_model" \
-    --client-attack-rate "lambda x: True"
+    --attacked-server True \
+    --save-filename "total_takeover" \
+    --server-attack-rate "lambda x: x == 8"
