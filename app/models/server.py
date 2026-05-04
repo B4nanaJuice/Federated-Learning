@@ -36,7 +36,6 @@ class Server:
         # Clients registry
         self.client_registry: Dict[str, Client] = {}
         self.selected_clients: List[Client] = []
-        self.client_weights: Dict[str, float] = {} # For the scoring and the weighted aggregation
 
         # Global model
         self.global_model: nn.Module = global_model
@@ -103,14 +102,13 @@ class Server:
             self.RMSE[client.client_id] = self.RMSE.get(client.client_id, []) + update.get('RMSE', [])
 
             self.received_updates.append(update)
-            self.client_weights[client.client_id] = 1/len(self.selected_clients)
         self.training_loss.append(training_loss)
 
     def aggregate(self) -> None:
         if len(self.received_updates) < self.min_clients:
             raise Exception('Number of minimum models not reached')
         
-        new_state = self.aggregation_function(self.received_updates, self.client_weights)
+        new_state = self.aggregation_function(self.received_updates, [1/len(self.received_updates) for _ in range(len(self.received_updates))])
         self.global_model.load_state_dict(new_state)
 
         self.current_round += 1

@@ -28,15 +28,16 @@ def cmd_check(args: list[str]):
     logger.info("Running checks...")
     from app.models import check_dataset, check_models, check_client, check_server
     from app.attacking_models import check_malicious_client
-    from app.scoring import check_scoring_entity
+    from app.scoring import check_scoring_entity, check_scoring_server
 
     checks = {
-        'models':          check_models,
-        'dataset':         check_dataset,
-        'client':          check_client,
+        'models':           check_models,
+        'dataset':          check_dataset,
+        'client':           check_client,
         'malicious-client': check_malicious_client,
-        'server':          check_server,
-        'scoring':         check_scoring_entity
+        'server':           check_server,
+        'scoring':          check_scoring_entity,
+        'scoring-server':   check_scoring_server
     }
     for flag, fn in checks.items():
         if flag in args:

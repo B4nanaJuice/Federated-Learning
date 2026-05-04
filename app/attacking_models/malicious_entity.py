@@ -21,7 +21,7 @@ class MaliciousEntity:
         self.partial_attack: bool = partial_attack
 
     @staticmethod
-    def poison_model(model: nn.Module, attack_method: str, partial: bool = False) -> Dict[str, torch.Tensor]:
+    def poison_model(model: nn.Module, attack_method: str, coef: float = 1, partial: bool = False) -> Dict[str, torch.Tensor]:
         
         model: Dict[str, torch.Tensor] = model.state_dict()
         keys: List = list(model.keys())
@@ -29,17 +29,17 @@ class MaliciousEntity:
 
         match attack_method:
             case 'gaussian_noise':
-                fn = lambda layer: model[layer] + torch.randn_like(model[layer])
+                fn = lambda layer: model[layer] + coef * torch.randn_like(model[layer])
             case 'gaussian_weights':
-                fn = lambda layer: torch.randn_like(model[layer])
+                fn = lambda layer: coef * torch.randn_like(model[layer])
             case 'uniform_noise':
-                fn = lambda layer: model[layer] + torch.rand_like(model[layer])
+                fn = lambda layer: model[layer] + coef * torch.rand_like(model[layer])
             case 'uniform_weights':
-                fn = lambda layer: torch.rand_like(model[layer])
+                fn = lambda layer: coef * torch.rand_like(model[layer])
             case 'gradient_inversion':
-                fn = lambda layer: model[layer] * -1
+                fn = lambda layer: model[layer] * -coef
             case 'gradient_amplification':
-                fn = lambda layer: model[layer] * 3
+                fn = lambda layer: model[layer] * coef
             case _:
                 logger.warning(f'Unknown attack method {attack_method}.')
                 return model
