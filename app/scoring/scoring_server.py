@@ -28,9 +28,21 @@ class ScoringServer(Server, ScoringEntity):
 
         super().collect_updates(threaded = threaded)
 
-        for update in self.received_updates:
-            self.compute_score(update.get('client_id'), update.get('weights'))
+        kept_updates: List[Dict] = []
 
+        for update in self.received_updates:
+            client_id = update.get('client_id')
+
+            self.compute_score(client_id, update.get('weights'))
+            logger.info(f'Score of client {client_id}: {self.scores.get(client_id)}')
+
+            if self.scores.get(client_id) < self.threshold:
+                logger.info(f'Client {client_id} has a score too low ({self.scores.get(client_id)} < {self.threshold})')
+                self.rejected_models += 1
+            else:
+                kept_updates.append(update)
+
+        self.received_updates = copy.deepcopy(kept_updates)
         logger.info(f'Scores: {self.scores}')
         return
     
@@ -38,69 +50,37 @@ class ScoringServer(Server, ScoringEntity):
         if len(self.received_updates) < self.min_clients:
             raise Exception('Number of minimum models not reached')
         
-        new_state = self._filtered_fedavg(self.received_updates, self.scores, self.threshold)
-        if not new_state:
-            self.global_model.load_state_dict(self.saved_model)
-        else:
-            self.global_model.load_state_dict(new_state)
-
         self.current_round += 1
+
+        logger.info(f'Received updates count: {len(self.received_updates)}')
+        logger.info(f'Kept updates: {[_.get("client_id") for _ in self.received_updates]}')
+        
+        if len(self.received_updates) == 0:
+            logger.info('No update is trusted. Taking the saved model instead.')
+            self.global_model.load_state_dict(self.saved_model)
+            return
+        
+        new_state = self.aggregation_function(self.received_updates, self.scores)
+        self.global_model.load_state_dict(new_state)
         return
-    
-    @staticmethod
-    def _filtered_fedavg(updates: List[Dict], weights: Dict[str, float], threshold: float) -> Dict[str, torch.Tensor]:
-        aggregated: Dict[str, torch.Tensor] = {}
-        taken_scores: List[float] = [_ for _ in weights.values() if _ > threshold]
-
-        if len(taken_scores) == 0:
-            return None
-
-        sum_score: float = sum(taken_scores)
-
-        for update in updates:
-            client_id = update.get('client_id')
-            score = weights.get(client_id)
-
-            if score < threshold:
-                logger.info(f'Client {client_id} has a score too low ({score} < {threshold})')
-                pass
-
-            for k, delta in update.get('weights').items():
-                if k not in aggregated:
-                    aggregated[k] = torch.zeros_like(delta)
-                aggregated[k] += score * delta / sum_score
-
-        return aggregated
     
 def check_scoring_server():
     logger.info('Starting scoring server check...')
 
-    sigmas: List[float] = [1.0, 2.0, 3.0, 4.0, 5.0, 7.0, 10.0]
-    results: Dict[str, List[float]] = {}
-    run_count: int = 10
+    server: ScoringServer = ScoringServer(
+        global_model = NormalMLP(),
+        max_rounds = 5,
+        metric = ScoringMetric.DISTANCE,
+        min_clients = 0,
+        metric_parameters = {'sigma': 2.0}
+    )
 
-    for sigma in sigmas:
-        logger.info(f'Test with sigma = {sigma}')
+    server.register_client(Client(1, NormalMLP(), local_epochs = 2))
+    server.register_client(Client(2, NormalMLP(), local_epochs = 2))
 
-        for _ in range(run_count):
+    server.run()
 
-            server: ScoringServer = ScoringServer(
-                global_model = NormalMLP(),
-                metric = ScoringMetric.DISTANCE,
-                max_rounds = 15,
-                metric_parameters = {'sigma': sigma}
-            )
-
-            for _ in range(5):
-                server.register_client(Client(_+1, local_epochs = 10))
-
-            server.run(client_fraction = 1)
-            average_loss = [sum(_)/len(_) for _ in server.training_loss]
-            if not f'{sigma}' in results:
-                results[f'{sigma}'] = np.array(average_loss) / run_count
-            else:
-                results[f'{sigma}'] += np.array(average_loss) / run_count
-
-    torch.save(results, f'{config.SAVE_DATA_PATH}/distance_scoring.pt')
+    assert server.rejected_models >= 0
+    logger.info(f'Server rejected updates: {server.rejected_models}')
 
     logger.info('Scoring server check ended successfully')

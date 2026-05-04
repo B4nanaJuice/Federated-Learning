@@ -38,6 +38,7 @@ class ScoringEntity:
         self.threshold: float = threshold
         self.saved_model: Dict[str, torch.Tensor] = None
         self.metric_parameters: Dict[str, any] = metric_parameters
+        self.rejected_models: int = 0
         
         # Validation dataset
         self._tensor: torch.Tensor = torch.load(f'app/scoring/validation_dataset.pt')
@@ -65,6 +66,10 @@ class ScoringEntity:
         """
         Distribution based on Jensen-Shannon divergence score
         """
+
+        if 'bins' in self.metric_parameters:
+            logger.info(f'Taking bins from parameters: {self.metric_parameters["bins"]}')
+            bins = self.metric_parameters['bins']
         
         w_a: torch.Tensor = torch.cat([p.data.flatten() for p in model.values()])
         w_b: torch.Tensor = torch.cat([p.data.flatten() for p in self.saved_model.values()])
@@ -112,6 +117,10 @@ class ScoringEntity:
         return (cosine + sign + magnitude) / 3
     
     def get_validation(self, model: Dict[str, torch.Tensor], sigma: float = 1.0) -> float:
+
+        if 'sigma' in self.metric_parameters:
+            logger.info(f'Taking sigma from parameters: {self.metric_parameters["sigma"]}')
+            sigma = self.metric_parameters['sigma']
 
         _model = NormalMLP()
         _model.load_state_dict(model)
@@ -192,10 +201,6 @@ def evaluate_poisonous_model_scoring():
 
 def check_scoring_entity():
     logger.info('Starting scoring entity check')
-
-    evaluate_poisonous_model_scoring()
-
-    return
     
     # Load model
     base_model: nn.Module = NormalMLP()
