@@ -1,14 +1,12 @@
 # Imports
-import torch.nn as nn
-import torch
-from typing import Dict, List
 import copy
-import matplotlib.pyplot as plt
-import numpy as np
+import torch
+import torch.nn as nn
+from typing import Dict, List
 
-from app.scoring.scoring_entity import ScoringEntity, ScoringMetric
-from app.models import NormalMLP, Server, Client
 from config import create_logger, config
+from app.models import NormalMLP, Server, Client
+from app.scoring.scoring_entity import ScoringEntity, ScoringMetric
 
 logger = create_logger(__name__)
 

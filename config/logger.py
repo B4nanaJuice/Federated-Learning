@@ -1,8 +1,8 @@
 # Imports
-import logging
-from datetime import datetime, timezone
-from typing import Callable
 import os
+import logging
+from typing import Callable
+from datetime import datetime, timezone
 
 def create_logger(name: str, 
                   log_path: str = "logs", 

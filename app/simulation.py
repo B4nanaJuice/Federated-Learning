@@ -1,12 +1,12 @@
 # Imports
-from typing import List, Callable, Dict
-from tqdm import tqdm
-import numpy as np
 import json
+import numpy as np
+from tqdm import tqdm
+from typing import List, Callable, Dict
 
+from config import create_logger, config
 from app.models import Client, Server, NormalMLP, SoftGatedMoE
 from app.attacking_models import MaliciousClient, AttackedServer
-from config import create_logger, config
 
 logger = create_logger(__name__)
 

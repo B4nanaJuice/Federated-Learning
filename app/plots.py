@@ -1,7 +1,7 @@
 # Imports
+import numpy as np
 import matplotlib.pyplot as plt
 from typing import List, Dict, Tuple
-import numpy as np
 from sklearn.metrics import mean_absolute_error
 
 from app.models import Server, NormalMLP

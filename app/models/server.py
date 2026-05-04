@@ -8,13 +8,12 @@ import torch.nn as nn
 from tqdm import tqdm
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from typing import Optional, Callable, Dict, List
 from sklearn.metrics import mean_squared_error
+from typing import Optional, Callable, Dict, List
 
 from app.models.client import Client
-from app.models.model import NormalMLP, SoftGatedMoE
-from app.models.dataloader import EnergyDataset
 from config import create_logger, config
+from app.models.dataloader import EnergyDataset
 
 logger = create_logger(__name__)
 

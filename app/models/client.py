@@ -4,15 +4,15 @@ import time
 import torch
 import numpy as np
 import torch.nn as nn
-from typing import Dict, List
 import matplotlib as mpl
+from typing import Dict, List
 import matplotlib.pyplot as plt
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
+from config import create_logger, config
+from app.models.utils import EarlyStopper
 from app.models.dataloader import EnergyDataset
 from app.models.model import NormalMLP, SoftGatedMoE
-from app.models.utils import EarlyStopper
-from config import create_logger, config
 
 logger = create_logger(__name__)
 

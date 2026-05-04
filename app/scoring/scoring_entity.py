@@ -1,21 +1,20 @@
 # Imports
-from typing import Dict, Tuple, Callable, List
+import copy
+import torch
+import numpy as np
+from time import time
 import torch.nn as nn
 from enum import Enum
-import torch
-import torch.nn.functional as F
-import numpy as np
 from scipy import stats
-import copy
-import pandas as pd
-from sklearn.metrics import mean_absolute_error
-from time import time
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import torch.nn.functional as F
+from typing import Dict, Tuple, Callable, List
+from sklearn.metrics import mean_absolute_error
 
+from config import config, create_logger
 from app.models import EnergyDataset, NormalMLP
 from app.attacking_models import MaliciousEntity
-from config import config, create_logger
 
 logger = create_logger(__name__)
 

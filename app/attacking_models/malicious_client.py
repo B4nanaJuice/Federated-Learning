@@ -1,10 +1,10 @@
 # Imports
-from typing import Dict
 import torch
+from typing import Dict
 
+from config import create_logger
 from app.models.client import Client
 from app.attacking_models.malicious_entity import MaliciousEntity
-from config import create_logger
 
 logger = create_logger(__name__)
 
