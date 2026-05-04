@@ -22,3 +22,6 @@ save/*.json
 
 # Temp documentation
 documentation/
+
+# Validation dataset for metric
+app/scoring/Validation_dataset.pt

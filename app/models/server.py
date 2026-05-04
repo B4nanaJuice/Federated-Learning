@@ -108,7 +108,8 @@ class Server:
         if len(self.received_updates) < self.min_clients:
             raise Exception('Number of minimum models not reached')
         
-        new_state = self.aggregation_function(self.received_updates, [1/len(self.received_updates) for _ in range(len(self.received_updates))])
+        weights = {_.get('client_id'): 1/len(self.received_updates) for _ in self.received_updates}
+        new_state = self.aggregation_function(self.received_updates, weights)
         self.global_model.load_state_dict(new_state)
 
         self.current_round += 1
@@ -125,15 +126,18 @@ class Server:
     @staticmethod
     def _fedavg(updates: List[Dict], weights: Dict[str, float]) -> Dict[str, torch.Tensor]:
         aggregated: Dict[str, torch.Tensor] = {}
+        sum_weights: float = sum(weights.values())
 
         for update in updates:
             client_id = update.get('client_id')
+            logger.info(f'Weights: {weights}')
             weight = weights.get(client_id)
+            logger.info(f'Weight of client {client_id}: {weight}')
 
             for k, delta in update.get('weights').items():
                 if k not in aggregated:
                     aggregated[k] = torch.zeros_like(delta)
-                aggregated[k] += weight * delta
+                aggregated[k] += weight * delta / sum_weights
 
         return aggregated
 
