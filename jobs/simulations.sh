@@ -93,3 +93,16 @@ python run.py run-simulation --run-count 10 \
     --attacked-server True \
     --save-filename "total_takeover" \
     --server-attack-rate "lambda x: x == 8"
+
+# Server has scoring system with distance metric and test only with honnest clients
+python run.py run-simulation --run-count 10 \
+    --save-filename distance_scoring \
+    --rounds 15 \
+    --server-scoring true \
+    --metric distance \
+    --threshold 0.4 \
+    --sigma 1,2,3,4,4.5,5,5.5,6,8,10 \
+    --client-count 5 \
+    --epochs 15 \
+    --batch 128 \
+    --fraction 1

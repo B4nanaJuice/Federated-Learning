@@ -17,10 +17,5 @@ spack load py-pip ^python@3.11.9
 mkdir -p output
 source /gpfs/home/griesmax/Federated-Learning/venv/bin/activate
 
-python run.py group-data --run-count 10 --save-filename "clean_run"
-python run.py group-data --run-count 10 --save-filename "5%_clients_data"
-python run.py group-data --run-count 10 --save-filename "20%_clients_data"
-python run.py group-data --run-count 10 --save-filename "5%_clients_model"
-python run.py group-data --run-count 10 --save-filename "20%_clients_model"
-python run.py group-data --run-count 10 --save-filename "clients_gradient_inversion"
-python run.py group-data --run-count 10 --save-filename "clients_gradient_amplification"
+python run.py group-data --run-count 10 --save-filename "total_takeover"
+python run.py group-data --run-count 10 --save-filename "partial_corruption"
