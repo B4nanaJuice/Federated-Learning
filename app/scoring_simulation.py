@@ -82,24 +82,8 @@ def simulate_scoring(**options):
 
             # Append results
             results['rejected'][sigma_idx] += server.rejected_models
-
-            logger.debug(f'Server\'s training loss: {server.training_loss}')
-            logger.debug(f'Server training loss shape: {np.array(server.training_loss).shape}')
-
             average_mse = np.array([sum(_)/len(_) for _ in server.training_loss])
-
-            logger.debug(f'Average MSE: {average_mse}')
-            logger.debug(f'Average MSE shape: {average_mse.shape}')
-
             average_rmse = np.sqrt(average_mse)
-
-            logger.debug(f'Average RMSE: {average_rmse}')
-            logger.debug(f'Average RMSE shape: {average_rmse.shape}')
-
-            logger.debug(f'Results RMSE: {results['RMSE']}')
-            logger.debug(f'At index: {results['RMSE'][sigma_idx]}')
-            logger.debug(f'Shape: {results['RMSE'][sigma_idx].shape}')
-
             results['RMSE'][sigma_idx] += average_rmse
 
     # Normalize data
