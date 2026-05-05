@@ -126,6 +126,7 @@ class ScoringEntity:
 
         _model = NormalMLP()
         _model.load_state_dict(model)
+        _model = _model.to(config.DEVICE)
         
         with torch.no_grad():
             x_val, y_val = self.dataset[:]
