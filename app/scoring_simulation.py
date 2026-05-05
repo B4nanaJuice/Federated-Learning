@@ -1,23 +1,119 @@
 # Imports
-from typing import List, Dict
-import numpy as np
-import torch
 import json
+import numpy as np
+from typing import List, Dict
+import matplotlib.pyplot as plt
 
-from app.scoring import ScoringServer, ScoringMetric
-from app.models import Client, NormalMLP
 from config import create_logger, config
+from app.models import Client, NormalMLP, Server
+from app.scoring import ScoringServer, ScoringMetric
 
 logger = create_logger(__name__)
 
-def simulate_distance(**options):
-    pass
+def simulate_scoring(**options):
 
-def simulate_distribution(**options):
-    pass
+    # Get parameters from options
+    ## Overall parameters
+    model = NormalMLP
+    run_count: int = int(options.get('run-count', 10))
+    save_filename: str = options.get('save-filename', 'scoring')
 
-def simulate_similarity(**options):
-    pass
+    ## Server parameters
+    server_max_rounds: int = int(options.get('rounds', 20))
+    server_scoring: bool = options.get('server-scoring', 'true') == 'true'
 
-def simulate_dataset(**options):
-    pass
+    ## Scoring parameters
+    scoring_metric: ScoringMetric = ScoringMetric[options.get('metric', 'distance').upper()]
+    scoring_threshold: float = float(options.get('threshold', .4))
+    scoring_sigmas: List[float] = [float(_) for _ in options.get('sigma', '1,2').split(',')]
+    scoring_bins: int = int(options.get('bins', 100))
+
+    ## Client parameters
+    client_count: int = int(options.get('client-count', 10))
+    client_epochs: int = int(options.get('epochs', 10))
+    client_batch_size: int = int(options.get('batch', 128))
+    client_lr: float = float(options.get('lr', 1e-3))
+    client_fraction: float = float(options.get('fraction', .5))
+
+    # Generate result variables
+    results: Dict[str, any] = {
+        'rejected': np.zeros(len(scoring_sigmas)),                 # Rejected percentage of models -> Size = size sigmas
+        'RMSE': np.zeros((len(scoring_sigmas), server_max_rounds)) # RMSE of training phase over rounds -> Size = rounds x sigmas
+    }
+
+    for sigma_idx in range(len(scoring_sigmas)):
+        sigma: float = scoring_sigmas[sigma_idx]
+        logger.info(f'Simulation with sigma = {sigma}')
+
+        for run in range(run_count):
+            
+            # Server creation
+            if server_scoring:
+                server: ScoringServer = ScoringServer(
+                    global_model = model(),
+                    max_rounds = server_max_rounds,
+                    metric = scoring_metric,
+                    threshold = scoring_threshold,
+                    metric_parameters = {
+                        'sigma': sigma,
+                        'bins': scoring_bins
+                    },
+                    min_clients = 0
+                )
+            else:
+                server: Server = Server(
+                    global_model = model(),
+                    max_rounds = server_max_rounds,
+                    min_clients = 0
+                )
+
+            # Register clients
+            for _ in range(client_count):
+                server.register_client(Client(
+                    client_id = _+1,
+                    model = model(),
+                    local_epochs = client_epochs,
+                    batch_size = client_batch_size,
+                    learning_rate = client_lr
+                ))
+
+            # Run server
+            server.run(client_fraction = client_fraction)
+
+            # Append results
+            results['rejected'][sigma_idx] += server.rejected_models
+
+            logger.debug(f'Server\'s training loss: {server.training_loss}')
+            logger.debug(f'Server training loss shape: {np.array(server.training_loss).shape}')
+
+            average_mse = np.array([sum(_)/len(_) for _ in server.training_loss])
+
+            logger.debug(f'Average MSE: {average_mse}')
+            logger.debug(f'Average MSE shape: {average_mse.shape}')
+
+            average_rmse = np.sqrt(average_mse)
+
+            logger.debug(f'Average RMSE: {average_rmse}')
+            logger.debug(f'Average RMSE shape: {average_rmse.shape}')
+
+            logger.debug(f'Results RMSE: {results['RMSE']}')
+            logger.debug(f'At index: {results['RMSE'][sigma_idx]}')
+            logger.debug(f'Shape: {results['RMSE'][sigma_idx].shape}')
+
+            results['RMSE'][sigma_idx] += average_rmse
+
+    # Normalize data
+    results['rejected'] /= run_count
+    results['rejected'] = results['rejected'] * 100 / (client_count * client_fraction * server_max_rounds)
+
+    results['RMSE'] /= run_count
+
+    # Save data to file
+    with open(f'{config.SAVE_DATA_PATH}/{save_filename}.json', mode = 'w', encoding = 'utf-8') as f:
+        f.write(json.dumps(
+            {
+                'rejected': results['rejected'].tolist(),
+                'RMSE': results['RMSE'].tolist()
+            },
+            indent = 4
+        ))

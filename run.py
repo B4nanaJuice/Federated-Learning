@@ -11,7 +11,7 @@ COMMANDS = ['preprocess', 'check', 'run-simulation', 'test', 'group-data', 'show
 def parse_named_options(args: list[str]) -> dict:
     """Parse --key value pairs from argument list."""
     if len(args) % 2 != 0:
-        raise ValueError("Each option must be a --key value pair.")
+        raise ValueError('Each option must be a --key value pair.')
     return {
         args[2 * i].lstrip('-'): args[2 * i + 1]
         for i in range(len(args) // 2)
@@ -19,13 +19,13 @@ def parse_named_options(args: list[str]) -> dict:
 
 
 def cmd_preprocess():
-    logger.info("Running data preprocessing...")
+    logger.info('Running data preprocessing...')
     from data import run_preprocessing
     run_preprocessing()
 
 
 def cmd_check(args: list[str]):
-    logger.info("Running checks...")
+    logger.info('Running checks...')
     from app.models import check_dataset, check_models, check_client, check_server
     from app.attacking_models import check_malicious_client
     from app.scoring import check_scoring_entity, check_scoring_server
@@ -45,14 +45,20 @@ def cmd_check(args: list[str]):
 
 
 def cmd_run_simulation(args: list[str]):
-    logger.info("Running simulation...")
+    logger.info('Running simulation...')
     options = parse_named_options(args)
     from app import multi_run
     multi_run(**options)
 
+def cmd_run_scoring_simulation(args: list[str]):
+    logger.info('Running scoring simulation...')
+    options = parse_named_options(args)
+    from app import simulate_scoring
+    simulate_scoring(**options)
+
 
 def cmd_test(args: list[str]):
-    logger.info("Running test simulation...")
+    logger.info('Running test simulation...')
     from app import simulate_clean, simulate_malicious_clients, simulate_attacked_server, simulate_attacked_and_malicious
 
     tests = {
@@ -67,14 +73,14 @@ def cmd_test(args: list[str]):
 
 
 def cmd_group_data(args: list[str]):
-    logger.info("Running data grouping...")
+    logger.info('Running data grouping...')
     options = parse_named_options(args)
     from app import data_grouping
     data_grouping(**options)
 
 
 def cmd_show_results():
-    logger.info("Showing multirun results...")
+    logger.info('Showing multirun results...')
     from app.plots import compare_loss, compare_MSE
     compare_MSE([
         'clean_run_grouped',
@@ -96,6 +102,7 @@ if __name__ == "__main__":
         case 'preprocess':      cmd_preprocess()
         case 'check':           cmd_check(extra_args)
         case 'run-simulation':  cmd_run_simulation(extra_args)
+        case 'run-scoring':     cmd_run_scoring_simulation(extra_args)
         case 'test':            cmd_test(extra_args)
         case 'group-data':      cmd_group_data(extra_args)
         case 'show-results':    cmd_show_results()
