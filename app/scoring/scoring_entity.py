@@ -132,8 +132,8 @@ class ScoringEntity:
             x_val, y_val = self.dataset[:]
             x_val = x_val.to(device = config.DEVICE)
 
-            predictions = _model(x_val)
-            mae: float = mean_absolute_error(y_val[:, 1], predictions[:, 1])
+            predictions: torch.Tensor = _model(x_val)
+            mae: float = mean_absolute_error(y_val[:, 1].tolist(), predictions[:, 1].tolist())
 
             return np.exp(-mae / sigma)
 
