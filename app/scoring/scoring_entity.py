@@ -57,6 +57,9 @@ class ScoringEntity:
             ScoringMetric.SIMILARITY: self.get_similarity,
             ScoringMetric.DATASET: self.get_validation
         }
+
+        # Put all data on cpu for metric computation
+        model = { k: v.to('cpu') for k, v in copy.deepcopy(model).items() }
         
         self.scores[entity_name] = metrics.get(self.metric, lambda _: 0.0)(model)
         return self.scores[entity_name]
