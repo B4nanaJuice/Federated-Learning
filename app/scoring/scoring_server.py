@@ -19,7 +19,7 @@ class ScoringServer(Server, ScoringEntity):
     def broadcast(self, round: int) -> Dict[str, torch.Tensor]:
 
         broadcasted_model: Dict[str, torch.Tensor] = super().broadcast(round)
-        self.saved_model = copy.deepcopy(broadcasted_model)
+        self.saved_model = copy.deepcopy(broadcasted_model).to('cpu')
         return self.broadcast_model
 
     def collect_updates(self, threaded: bool = config.SIM_THREADED) -> None:
