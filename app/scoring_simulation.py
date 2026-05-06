@@ -38,7 +38,7 @@ def simulate_scoring(**options):
     # Generate result variables
     results: Dict[str, any] = {
         # Rejected percentage of models -> Size = size sigmas
-        'rejected': np.zeros(len(scoring_sigmas)),
+        'rejected': np.zeros(max(len(scoring_sigmas), len(scoring_bins))),
         # RMSE of training phase over rounds -> Size = rounds x parameters (sigmas or bins)
         'RMSE': np.zeros((max(len(scoring_sigmas), len(scoring_bins)), server_max_rounds)) 
     }
