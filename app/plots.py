@@ -100,7 +100,7 @@ def compare_scoring(files: List[str]) -> None:
         offset = width * multiplier
         rects = ax1.bar(x + offset, data['rejected'], width, label = file.replace("_", " ").capitalize(), color = colors[idx])
 
-        ax1.bar_label(rects, padding = 3)
+        ax1.bar_label(rects, padding = 3, labels = [f'${"\\sigma" if "distribution" not in file else "bins"}={_}$' for _ in data['parameters']], rotation = 90)
         multiplier += 1
 
         # ax1.plot(data['rejected'], label = file.replace("_", " ").capitalize(), color = colors[idx])
@@ -126,7 +126,7 @@ def compare_scoring(files: List[str]) -> None:
     ax1.set_title('Percentage of rejected models by the server')
     ax1.set_xlabel('$\\sigma$')
     ax1.set_ylabel('Percentage (%)')
-    # ax1.set_ylim([-1, 100])
+    ax1.set_ylim([0, 110])
 
     ax2.set_title('Loss with filtered models')
     ax2.set_xlabel('Round')
