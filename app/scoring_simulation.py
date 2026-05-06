@@ -25,8 +25,8 @@ def simulate_scoring(**options):
     ## Scoring parameters
     scoring_metric: ScoringMetric = ScoringMetric[options.get('metric', 'distance').upper()]
     scoring_threshold: float = float(options.get('threshold', .4))
-    scoring_sigmas: List[float] = [float(_) for _ in options.get('sigma', '1,2').split(',')]
-    scoring_bins: int = int(options.get('bins', 100))
+    scoring_sigmas: List[float] = [float(_) for _ in options.get('sigma', '1').split(',')]
+    scoring_bins: List[int] = [int(_) for _ in options.get('bins', '100').split(',')]
 
     ## Client parameters
     client_count: int = int(options.get('client-count', 10))
@@ -37,12 +37,15 @@ def simulate_scoring(**options):
 
     # Generate result variables
     results: Dict[str, any] = {
-        'rejected': np.zeros(len(scoring_sigmas)),                 # Rejected percentage of models -> Size = size sigmas
-        'RMSE': np.zeros((len(scoring_sigmas), server_max_rounds)) # RMSE of training phase over rounds -> Size = rounds x sigmas
+        # Rejected percentage of models -> Size = size sigmas
+        'rejected': np.zeros(len(scoring_sigmas)),
+        # RMSE of training phase over rounds -> Size = rounds x parameters (sigmas or bins)
+        'RMSE': np.zeros((max(len(scoring_sigmas), len(scoring_bins)), server_max_rounds)) 
     }
 
-    for sigma_idx in range(len(scoring_sigmas)):
-        sigma: float = scoring_sigmas[sigma_idx]
+    for idx in range(max(len(scoring_sigmas), len(scoring_bins))):
+        sigma: float = scoring_sigmas[min(idx, len(scoring_sigmas)-1)]
+        bins: int = scoring_bins[min(idx, len(scoring_bins)-1)]
         logger.info(f'Simulation with sigma = {sigma}')
 
         for run in range(run_count):
@@ -56,7 +59,7 @@ def simulate_scoring(**options):
                     threshold = scoring_threshold,
                     metric_parameters = {
                         'sigma': sigma,
-                        'bins': scoring_bins
+                        'bins': bins
                     }
                 )
             else:
@@ -79,10 +82,10 @@ def simulate_scoring(**options):
             server.run(client_fraction = client_fraction)
 
             # Append results
-            results['rejected'][sigma_idx] += server.rejected_models
+            results['rejected'][idx] += server.rejected_models
             average_mse = np.array([sum(_)/len(_) for _ in server.training_loss])
             average_rmse = np.sqrt(average_mse)
-            results['RMSE'][sigma_idx] += average_rmse
+            results['RMSE'][idx] += average_rmse
 
     # Normalize data
     results['rejected'] /= run_count
@@ -94,6 +97,7 @@ def simulate_scoring(**options):
     with open(f'{config.SAVE_DATA_PATH}/{save_filename}.json', mode = 'w', encoding = 'utf-8') as f:
         f.write(json.dumps(
             {
+                'parameters': scoring_sigmas if len(scoring_sigmas) > len(scoring_bins) else scoring_bins,
                 'rejected': results['rejected'].tolist(),
                 'RMSE': results['RMSE'].tolist()
             },
