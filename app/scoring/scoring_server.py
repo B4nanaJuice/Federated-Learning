@@ -45,9 +45,7 @@ class ScoringServer(Server, ScoringEntity):
         return
     
     def aggregate(self) -> None:
-        if len(self.received_updates) < self.min_clients:
-            raise Exception('Number of minimum models not reached')
-        
+
         self.current_round += 1
 
         logger.info(f'Received updates count: {len(self.received_updates)}')
@@ -69,7 +67,6 @@ def check_scoring_server():
         global_model = NormalMLP(),
         max_rounds = 5,
         metric = ScoringMetric.DISTANCE,
-        min_clients = 0,
         metric_parameters = {'sigma': 2.0}
     )
 

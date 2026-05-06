@@ -57,14 +57,12 @@ def simulate_scoring(**options):
                     metric_parameters = {
                         'sigma': sigma,
                         'bins': scoring_bins
-                    },
-                    min_clients = 0
+                    }
                 )
             else:
                 server: Server = Server(
                     global_model = model(),
-                    max_rounds = server_max_rounds,
-                    min_clients = 0
+                    max_rounds = server_max_rounds
                 )
 
             # Register clients

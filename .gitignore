@@ -17,8 +17,7 @@ __pycache__/
 logs/
 
 # Saves
-save/*.pt
-save/*.json
+save/
 
 # Temp documentation
 documentation/
