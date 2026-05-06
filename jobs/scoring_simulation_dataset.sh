@@ -18,12 +18,12 @@ source /gpfs/home/griesmax/Federated-Learning/venv/bin/activate
 
 # Attacker that will poison only last layer of the broadcasted model
 python run.py run-scoring --run-count 10 \
-    --save-filename distance_scoring \
+    --save-filename dataset_scoring \
     --rounds 15 \
     --server-scoring true \
     --metric dataset \
     --threshold 0.4 \
-    --sigma 1,2,3,4,4.5,5,5.5,6,8,10 \
+    --sigma 1e-3,2e-3,5e-3,1e-2,2e-2,5e-2,1e-1,2e-1,5e-1,1 \
     --client-count 5 \
     --epochs 15 \
     --batch 128 \
