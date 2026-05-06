@@ -15,17 +15,18 @@ class MaliciousEntity:
                  partial_attack: bool = False,
                  **kwargs
                 ):
+
         self.attack_rate: float | Callable = attack_rate
         self.attack_method: str = attack_method
         self.attacked_rounds: List[int] = []
         self.partial_attack: bool = partial_attack
 
     @staticmethod
-    def poison_model(model: nn.Module, attack_method: str, coef: float = 1, partial: bool = False) -> Dict[str, torch.Tensor]:
+    def poison_model(model: nn.Module, attack_method: str, partial: bool, coef: float = 1) -> Dict[str, torch.Tensor]:
         
         model: Dict[str, torch.Tensor] = model.state_dict()
         keys: List = list(model.keys())
-        target_keys: List = keys[-1:] if partial else keys
+        target_keys: List = keys[-2:] if partial else keys
 
         match attack_method:
             case 'gaussian_noise':
@@ -52,7 +53,7 @@ class MaliciousEntity:
     def can_attack(self) -> bool:
         round_value = getattr(self, 'round_id', getattr(self, 'current_round', None))
 
-        if callable(self.attack_rate) and round_value:
+        if callable(self.attack_rate) and round_value is not None:
             return self.attack_rate(round_value)
         return rd.random() < self.attack_rate
     

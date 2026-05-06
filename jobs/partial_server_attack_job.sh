@@ -27,4 +27,4 @@ python run.py run-simulation --run-count 10 \
     --attacked-server True \
     --save-filename "partial_corruption" \
     --server-attack-rate "lambda x: x in [7, 8, 12, 14]" \
-    --partial_attack True
+    --partial-attack True

@@ -22,7 +22,6 @@ class Server:
     def __init__(self,
                  global_model: nn.Module,
                  max_rounds: int = 50,
-                 min_clients: int = 2,
                  aggregation_function: Optional[Callable] = None,
                  **kwargs
                  ):
@@ -30,7 +29,6 @@ class Server:
         # Coordination
         self.current_round: int = 0
         self.max_rounds: int = max_rounds
-        self.min_clients: int = min_clients
 
         # Clients registry
         self.client_registry: Dict[str, Client] = {}
@@ -66,8 +64,7 @@ class Server:
 
     def select_clients(self, fraction: float = 1.0) -> List[Client]:
         import random as rd
-        k = max(self.min_clients, int(len(self.client_registry) * fraction))
-        k = min(k, len(self.client_registry))
+        k = int(len(self.client_registry) * fraction)
         self.selected_clients = rd.sample(list(self.client_registry.values()), k)
         self.participation_rate = len(self.selected_clients) / len(self.client_registry)
         return self.selected_clients
@@ -104,9 +101,7 @@ class Server:
         self.training_loss.append(training_loss)
 
     def aggregate(self) -> None:
-        if len(self.received_updates) < self.min_clients:
-            raise Exception('Number of minimum models not reached')
-        
+
         weights = {_.get('client_id'): 1/len(self.received_updates) for _ in self.received_updates}
         new_state = self.aggregation_function(self.received_updates, weights)
         self.global_model.load_state_dict(new_state)

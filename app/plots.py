@@ -10,7 +10,7 @@ from app.models import Server, NormalMLP
 
 def compare_loss(files: List[str]) -> None:
 
-    colors = ['#13579B', '#579B13', '#9B1357', '#57139B']
+    colors = ['#13579B', '#579B13', '#9B1357', '#57139B', '#9B5713']
     fig, ax = plt.subplots(1, 1)
 
     for idx in range(len(files)):
