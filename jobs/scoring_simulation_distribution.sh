@@ -17,7 +17,7 @@ mkdir -p output
 source /gpfs/home/griesmax/Federated-Learning/venv/bin/activate
 
 # Attacker that will poison only last layer of the broadcasted model
-python run.py run-scoring --run-count 10 \
+python run.py run-scoring --run-count 3 \
     --save-filename distribution_scoring \
     --rounds 15 \
     --server-scoring true \
