@@ -120,7 +120,7 @@ def simulate_defenses(**options):
     server: Server = {
         'fedavg': Server(**server_options),
         'krum': KrumServer(**server_options),
-        'mkrum': MKrumServer(*server_options),
+        'mkrum': MKrumServer(**server_options),
         'norm': NormAggServer(**server_options),
         'cbaa': CBAAFedAvgServer(**server_options),
         'distance': ScoringServer(**server_options, metric = ScoringMetric.DISTANCE, metric_parameters = {'sigma': 0.8}),

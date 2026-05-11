@@ -1,30 +1,32 @@
 #! /bin/bash
 
-for malicious in {0..60..5}; do
+mkdir -p jobs/defense
+
+for malicious in {0..10..5}; do
     for defense in "fedavg" "krum" "mkrum" "norm" "cbaa" "distance" "distribution"; do
         
-        echo '#!/usr/bin/env bash' > job.sh;
-        echo '#SBATCH --account="r260042"' >> job.sh;
-        echo '#SBATCH --time=6:00:00' >> job.sh;
-        echo '#SBATCH --mem=16G' >> job.sh;
-        echo '#SBATCH --constraint=armgpu' >> job.sh;
-        echo '#SBATCH --nodes=2' >> job.sh;
-        echo '#SBATCH --cpus-per-task=1' >> job.sh;
-        echo '#SBATCH --gpus-per-node=1' >> job.sh;
-        echo "#SBATCH --job-name \"$malicious $defense\"" >> job.sh;
-        echo '#SBATCH --error=output/job.%J.err' >> job.sh;
-        echo '#SBATCH --output=output/job.%J.out' >> job.sh;
+        echo '#!/usr/bin/env bash' > jobs/defense/$defense.$malicious.sh;
+        echo '#SBATCH --account="r260042"' >> jobs/defense/$defense.$malicious.sh;
+        echo '#SBATCH --time=6:00:00' >> jobs/defense/$defense.$malicious.sh;
+        echo '#SBATCH --mem=16G' >> jobs/defense/$defense.$malicious.sh;
+        echo '#SBATCH --constraint=armgpu' >> jobs/defense/$defense.$malicious.sh;
+        echo '#SBATCH --nodes=2' >> jobs/defense/$defense.$malicious.sh;
+        echo '#SBATCH --cpus-per-task=1' >> jobs/defense/$defense.$malicious.sh;
+        echo '#SBATCH --gpus-per-node=1' >> jobs/defense/$defense.$malicious.sh;
+        echo "#SBATCH --job-name \"$malicious $defense\"" >> jobs/defense/$defense.$malicious.sh;
+        echo '#SBATCH --error=output/job.%J.err' >> jobs/defense/$defense.$malicious.sh;
+        echo '#SBATCH --output=output/job.%J.out' >> jobs/defense/$defense.$malicious.sh;
 
-        echo '' >> job.sh;
+        echo '' >> jobs/defense/$defense.$malicious.sh;
 
-        echo 'romeo_load_armgpu_env' >> job.sh;
-        echo 'spack load py-pip ^python@3.11.9' >> job.sh;
-        echo 'source /gpfs/home/griesmax/Federated-Learning/venv/bin/activate' >> job.sh;
+        echo 'romeo_load_armgpu_env' >> jobs/defense/$defense.$malicious.sh;
+        echo 'spack load py-pip ^python@3.11.9' >> jobs/defense/$defense.$malicious.sh;
+        echo 'source /gpfs/home/griesmax/Federated-Learning/venv/bin/activate' >> jobs/defense/$defense.$malicious.sh;
 
-        echo '' >> job.sh;
+        echo '' >> jobs/defense/$defense.$malicious.sh;
 
-        echo "python /gpfs/home/griesmax/Federated-Learning/run.py run-defenses --defense $defense --malicious $malicious" >> job.sh;
+        echo "python /gpfs/home/griesmax/Federated-Learning/run.py run-defenses --defense $defense --malicious $malicious" >> jobs/defense/$defense.$malicious.sh;
 
-        sbatch job.sh
+        sbatch jobs/defense/$defense.$malicious.sh;
     done
 done
