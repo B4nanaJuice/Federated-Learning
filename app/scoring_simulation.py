@@ -115,7 +115,7 @@ def simulate_defenses(**options):
 
     server_options: Dict[str, any] = {
         'global_model': NormalMLP(),
-        'max_rounds': 10
+        'max_rounds': 20
     }
 
     for run in tqdm(range(10)):
