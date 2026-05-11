@@ -5,6 +5,7 @@ import torch.nn as nn
 from typing import Dict, List
 
 from config import create_logger, config
+from app.services import AggregationService
 from app.models import NormalMLP, Server, Client
 from app.scoring.scoring_entity import ScoringEntity, ScoringMetric
 
@@ -56,7 +57,7 @@ class ScoringServer(Server, ScoringEntity):
             self.global_model.load_state_dict(self.saved_model)
             return
         
-        new_state = self.aggregation_function(self.received_updates, self.scores)
+        new_state = AggregationService.weighted_fed_avg(self.received_updates, self.scores)
         self.global_model.load_state_dict(new_state)
         return
     
