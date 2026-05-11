@@ -10,7 +10,7 @@ from app.models import Server, NormalMLP
 
 def compare_loss(files: List[str]) -> None:
 
-    colors = ['#13579B', '#579B13', '#9B1357', '#57139B', '#9B5713']
+    colors = ['#13579B', '#579B13', '#9B1357', '#57139B', '#9B5713', '#139B9B']
     fig, ax = plt.subplots(1, 1)
 
     for idx in range(len(files)):
@@ -25,7 +25,7 @@ def compare_loss(files: List[str]) -> None:
 
     ax.set_xlabel('Round id')
     ax.set_ylabel('Mean Square Error Loss')
-    ax.set_title('Comparison of average training loss for clean run and data poisoning attacks')
+    ax.set_title('Comparison of average training loss for clean run and poisoning attacks')
     # plt.grid(axis = 'y')
     ax.set_yscale('log')
     ax.spines['top'].set_visible(False)
@@ -55,15 +55,16 @@ def compare_MSE(files: List[str]) -> None:
             for _ in range(3)
         ])
 
+    colors = ['#13579B', '#579B13', '#9B1357', '#57139B', '#9B5713', '#139B9B']
     x = np.arange(len(['load', 'pv', 'net']))  # the label locations
     width = 0.15  # the width of the bars
-    multiplier = -1
+    multiplier = -0.5
 
     fig, ax = plt.subplots(layout = 'constrained')
 
     for attribute, measurement in MAE.items():
         offset = width * multiplier
-        rects = ax.bar(x + offset, measurement, width, label = attribute)
+        rects = ax.bar(x + offset, measurement, width, label = attribute, color = colors[int(multiplier+0.5)])
         labels: List[str] = [
             f'{measurement[_]:.3f}' if attribute == files[0] else f'$\\Delta = {deltas[attribute][_]:.3f}$'
             for _ in range(len(measurement))
@@ -100,7 +101,7 @@ def compare_scoring(files: List[str]) -> None:
         offset = width * multiplier
         rects = ax1.bar(x + offset, data['rejected'], width, label = file.replace("_", " ").capitalize(), color = colors[idx])
 
-        ax1.bar_label(rects, padding = 3, labels = [f'${"\\sigma" if "distribution" not in file else "bins"}={_}$' for _ in data['parameters']], rotation = 90)
+        ax1.bar_label(rects, padding = 3, labels = [] if 'similarity' in file else [f'${"\\sigma" if "distribution" not in file else "bins"}={_}$' for _ in data['parameters']], rotation = 90)
         multiplier += 1
 
         # ax1.plot(data['rejected'], label = file.replace("_", " ").capitalize(), color = colors[idx])
