@@ -27,7 +27,8 @@ for malicious in {0..60..5}; do
         echo '' >> job.sh;
 
         echo "python run.py run-defenses --defense $defense --malicious $malicious" >> job.sh;
-        
+
+        sbatch job.sh
     done
 done
 
