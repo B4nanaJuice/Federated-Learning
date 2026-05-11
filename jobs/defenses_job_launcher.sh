@@ -2,7 +2,7 @@
 
 mkdir -p jobs/defense
 
-for malicious in {0..10..5}; do
+for malicious in {0..60..5}; do
     for defense in "fedavg" "krum" "mkrum" "norm" "cbaa" "distance" "distribution"; do
         
         echo '#!/usr/bin/env bash' > jobs/defense/$defense.$malicious.sh;

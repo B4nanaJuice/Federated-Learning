@@ -81,8 +81,8 @@ class ScoringEntity:
             max(w_a.max().item(), w_b.max().item())
         )
 
-        pa, _ = np.histogram(w_a, bins = bins, range = _range, density = True)
-        pb, _ = np.histogram(w_b, bins = bins, range = _range, density = True)
+        pa, _ = np.histogram(w_a.tolist(), bins = bins, range = _range, density = True)
+        pb, _ = np.histogram(w_b.tolist(), bins = bins, range = _range, density = True)
 
         pa = (pa + 1e-10) / pa.sum()
         pb = (pb + 1e-10) / pb.sum()
