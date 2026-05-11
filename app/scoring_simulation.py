@@ -125,7 +125,7 @@ def simulate_defenses(**options):
         'cbaa': CBAAFedAvgServer(**server_options),
         'distance': ScoringServer(**server_options, metric = ScoringMetric.DISTANCE, metric_parameters = {'sigma': 0.8}),
         'distribution': ScoringServer(**server_options, metric = ScoringMetric.DISTRIBUTION)
-    }.get('defense')
+    }.get(defense)
 
     clients: List[Client] = []
     client_id: int = 1
