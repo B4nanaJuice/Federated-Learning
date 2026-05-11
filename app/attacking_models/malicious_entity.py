@@ -11,7 +11,7 @@ logger = create_logger(__name__)
 class MaliciousEntity:
     def __init__(self, 
                  attack_rate: float | Callable = .2, 
-                 attack_method: str = 'uniform_weights',
+                 attack_method: str = 'gaussian_weights',
                  partial_attack: bool = False,
                  **kwargs
                 ):

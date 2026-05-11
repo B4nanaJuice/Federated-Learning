@@ -56,6 +56,11 @@ def cmd_run_scoring_simulation(args: list[str]):
     from app import simulate_scoring
     simulate_scoring(**options)
 
+def cmd_run_defenses_simulation(args: list[str]):
+    logger.info('Running scoring simulation...')
+    options = parse_named_options(args)
+    from app import simulate_defenses
+    simulate_defenses(**options)
 
 def cmd_test(args: list[str]):
     logger.info('Running test simulation...')
@@ -82,12 +87,12 @@ def cmd_group_data(args: list[str]):
 def cmd_show_results():
     logger.info('Showing multirun results...')
     from app.plots import compare_loss, compare_MSE
-    compare_MSE([
-        'clean_run_grouped',
-        '5%_clients_model_grouped',
-        '20%_clients_model_grouped',
-        'clients_gradient_inversion_grouped',
-        'clients_gradient_amplification_grouped'
+    compare_loss([
+        'partial_corruption_0',
+        'partial_corruption_1',
+        'total_takeover_0',
+        'total_takeover_1',
+        'clean_run_grouped'
     ])
 
 
@@ -103,6 +108,7 @@ if __name__ == "__main__":
         case 'check':           cmd_check(extra_args)
         case 'run-simulation':  cmd_run_simulation(extra_args)
         case 'run-scoring':     cmd_run_scoring_simulation(extra_args)
+        case 'run-defenses':    cmd_run_defenses_simulation(extra_args)
         case 'test':            cmd_test(extra_args)
         case 'group-data':      cmd_group_data(extra_args)
         case 'show-results':    cmd_show_results()

@@ -6,7 +6,8 @@ import matplotlib.pyplot as plt
 
 from config import create_logger, config
 from app.models import Client, NormalMLP, Server
-from app.scoring import ScoringServer, ScoringMetric
+from app.attacking_models import MaliciousClient
+from app.scoring import ScoringServer, ScoringMetric, KrumServer, MKrumServer, NormAggServer, CBAAFedAvgServer
 
 logger = create_logger(__name__)
 
@@ -103,3 +104,48 @@ def simulate_scoring(**options):
             },
             indent = 4
         ))
+
+# Simulate all defenses
+def simulate_defenses(**options):
+
+    # Get variable parameters
+    defense: str = options.get('defense')
+    malicious_percentage: int = int(options.get('malicious'))
+
+    server_options: Dict[str, any] = {
+        'global_model': NormalMLP(),
+        'max_rounds': 10
+    }
+
+    server: Server = {
+        'fedavg': Server(**server_options),
+        'krum': KrumServer(**server_options),
+        'mkrum': MKrumServer(*server_options),
+        'norm': NormAggServer(**server_options),
+        'cbaa': CBAAFedAvgServer(**server_options),
+        'distance': ScoringServer(**server_options, metric = ScoringMetric.DISTANCE, metric_parameters = {'sigma': 0.8}),
+        'distribution': ScoringServer(**server_options, metric = ScoringMetric.DISTRIBUTION)
+    }.get('defense')
+
+    clients: List[Client] = []
+    client_id: int = 1
+
+    for _ in range(int(20 * malicious_percentage / 100)):
+        clients.append(MaliciousClient(
+            client_id = client_id,
+            batch_size = 128,
+            attack_rate = lambda x: True,
+        ))
+        client_id += 1
+
+    while client_id <= 20:
+        clients.append(Client(
+            client_id = client_id,
+            batch_size = 128
+        ))
+        client_id += 1
+
+    server.register_clients(clients = clients)
+    server.run(.5)
+    server.run_test(dataset_index = 5, days_count = 5)
+    server.save_metrics(f'defenses/{defense}_{malicious_percentage}')
