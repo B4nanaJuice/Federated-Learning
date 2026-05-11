@@ -1,6 +1,7 @@
 # Imports
 import json
 import numpy as np
+from tqdm import tqdm
 from typing import List, Dict
 import matplotlib.pyplot as plt
 
@@ -117,35 +118,39 @@ def simulate_defenses(**options):
         'max_rounds': 10
     }
 
-    server: Server = {
-        'fedavg': Server(**server_options),
-        'krum': KrumServer(**server_options),
-        'mkrum': MKrumServer(**server_options),
-        'norm': NormAggServer(**server_options),
-        'cbaa': CBAAFedAvgServer(**server_options),
-        'distance': ScoringServer(**server_options, metric = ScoringMetric.DISTANCE, metric_parameters = {'sigma': 0.8}),
-        'distribution': ScoringServer(**server_options, metric = ScoringMetric.DISTRIBUTION)
-    }.get(defense)
+    for run in tqdm(range(10)):
 
-    clients: List[Client] = []
-    client_id: int = 1
+        server: Server = {
+            'fedavg': Server(**server_options),
+            'krum': KrumServer(**server_options),
+            'mkrum': MKrumServer(**server_options),
+            'norm': NormAggServer(**server_options),
+            'cbaa': CBAAFedAvgServer(**server_options),
+            'distance': ScoringServer(**server_options, metric = ScoringMetric.DISTANCE, metric_parameters = {'sigma': 0.8}),
+            'distribution': ScoringServer(**server_options, metric = ScoringMetric.DISTRIBUTION)
+        }.get(defense)
 
-    for _ in range(int(20 * malicious_percentage / 100)):
-        clients.append(MaliciousClient(
-            client_id = client_id,
-            batch_size = 128,
-            attack_rate = lambda x: True,
-        ))
-        client_id += 1
+        clients: List[Client] = []
+        client_id: int = 1
 
-    while client_id <= 20:
-        clients.append(Client(
-            client_id = client_id,
-            batch_size = 128
-        ))
-        client_id += 1
+        for _ in range(int(20 * malicious_percentage / 100)):
+            clients.append(MaliciousClient(
+                client_id = client_id,
+                local_epochs = 15,
+                batch_size = 128,
+                attack_rate = lambda x: True,
+            ))
+            client_id += 1
 
-    server.register_clients(clients = clients)
-    server.run(.5)
-    server.run_test(dataset_index = 5, days_count = 5)
-    server.save_metrics(f'defenses/{defense}_{malicious_percentage}')
+        while client_id <= 20:
+            clients.append(Client(
+                client_id = client_id,
+                local_epochs = 15,
+                batch_size = 128
+            ))
+            client_id += 1
+
+        server.register_clients(clients = clients)
+        server.run(.5)
+        server.run_test(dataset_index = 5, days_count = 5)
+        server.save_metrics(f'defenses/{defense}_{malicious_percentage}_{run}')
