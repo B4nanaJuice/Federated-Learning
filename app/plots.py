@@ -3,7 +3,7 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 from typing import List, Dict, Tuple
-from sklearn.metrics import mean_absolute_error
+from sklearn.metrics import mean_absolute_error, root_mean_squared_error
 
 from config import config
 from app.models import Server, NormalMLP
@@ -55,16 +55,17 @@ def compare_MSE(files: List[str]) -> None:
             for _ in range(3)
         ])
 
-    colors = ['#13579B', '#579B13', '#9B1357', '#57139B', '#9B5713', '#139B9B']
+    # colors = ['#13579B', '#579B13', '#9B1357', '#57139B', '#9B5713', '#139B9B']
     x = np.arange(len(['load', 'pv', 'net']))  # the label locations
-    width = 0.15  # the width of the bars
-    multiplier = -0.5
+    width = round(0.9/len(files), 2)  # the width of the bars
+    multiplier = -1.5
 
     fig, ax = plt.subplots(layout = 'constrained')
 
     for attribute, measurement in MAE.items():
         offset = width * multiplier
-        rects = ax.bar(x + offset, measurement, width, label = attribute, color = colors[int(multiplier+0.5)])
+        # rects = ax.bar(x + offset, measurement, width, label = attribute, color = colors[int(multiplier+1.5)])
+        rects = ax.bar(x + offset, measurement, width, label = attribute)
         labels: List[str] = [
             f'{measurement[_]:.3f}' if attribute == files[0] else f'$\\Delta = {deltas[attribute][_]:.3f}$'
             for _ in range(len(measurement))
