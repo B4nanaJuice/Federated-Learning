@@ -126,23 +126,23 @@ def simulate_defenses(**options):
             'mkrum': MKrumServer(**server_options),
             'norm': NormAggServer(**server_options),
             'cbaa': CBAAFedAvgServer(**server_options),
-            'distance': ScoringServer(**server_options, metric = ScoringMetric.DISTANCE, metric_parameters = {'sigma': 0.8}),
+            'distance': ScoringServer(**server_options, metric = ScoringMetric.DISTANCE, metric_parameters = {'sigma': 8}),
             'distribution': ScoringServer(**server_options, metric = ScoringMetric.DISTRIBUTION)
         }.get(defense)
 
         clients: List[Client] = []
         client_id: int = 1
+        client_count: int = 20
 
-        for _ in range(int(20 * malicious_percentage / 100)):
+        for _ in range(int(client_count * malicious_percentage / 100)):
             clients.append(MaliciousClient(
                 client_id = client_id,
-                local_epochs = 15,
                 batch_size = 128,
                 attack_rate = lambda x: True,
             ))
             client_id += 1
 
-        while client_id <= 20:
+        while client_id <= client_count:
             clients.append(Client(
                 client_id = client_id,
                 local_epochs = 15,
