@@ -100,7 +100,7 @@ class ScoringEntity:
         
         dist: torch.Tensor = torch.Tensor([0])
         for p_a, p_b in zip(model.values(), self.saved_model.values()):
-            dist += (p_a.data - p_b.data).pow(2).sum()
+            dist += (p_a.data.cpu() - p_b.data.cpu()).pow(2).sum()
         dist: float = dist.sqrt().item()
 
         return torch.exp(torch.tensor(-dist / sigma)).item()

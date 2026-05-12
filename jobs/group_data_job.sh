@@ -17,5 +17,9 @@ spack load py-pip ^python@3.11.9
 mkdir -p output
 source /gpfs/home/griesmax/Federated-Learning/venv/bin/activate
 
-python run.py group-data --run-count 10 --save-filename "total_takeover"
-python run.py group-data --run-count 10 --save-filename "partial_corruption"
+for malicious in {0..60..5}; do
+    for defense in "fedavg" "krum" "mkrum" "cbaa" "distribution" "norm"; do
+        echo "Grouping data for defense $defense with $malicious percents malicious clients";
+        python /gpfs/home/griesmax/Federated-Learning/run.py group-data --run-count 10 --save-filename "defenses/$defense_$malicious"
+    done
+done
