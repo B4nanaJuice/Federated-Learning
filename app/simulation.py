@@ -204,7 +204,7 @@ def multi_run(**options):
 
 def data_grouping(**options) -> None:
 
-    save_filename: str = options.get('save-filename', 'run')
+    save_filename: str = options.get('save-filename', 'run').replace(' ', '_')
     run_count: int = int(options.get('run-count', 5))
 
     predictions: Dict[str, np.ndarray] = {
