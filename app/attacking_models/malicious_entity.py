@@ -26,7 +26,7 @@ class MaliciousEntity:
         
         model: Dict[str, torch.Tensor] = model.state_dict()
         keys: List = list(model.keys())
-        target_keys: List = keys[-2:] if partial else keys
+        target_keys: List = keys[-4:] if partial else keys
 
         match attack_method:
             case 'gaussian_noise':

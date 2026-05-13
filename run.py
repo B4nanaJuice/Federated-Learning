@@ -28,7 +28,7 @@ def cmd_check(args: list[str]):
     logger.info('Running checks...')
     from app.models import check_dataset, check_models, check_client, check_server
     from app.attacking_models import check_malicious_client
-    from app.scoring import check_scoring_entity, check_scoring_server
+    from app.scoring import check_scoring_entity, check_scoring_server, check_scoring_client
 
     checks = {
         'models':           check_models,
@@ -37,7 +37,8 @@ def cmd_check(args: list[str]):
         'malicious-client': check_malicious_client,
         'server':           check_server,
         'scoring':          check_scoring_entity,
-        'scoring-server':   check_scoring_server
+        'scoring-server':   check_scoring_server,
+        'scoring-client':   check_scoring_client
     }
     for flag, fn in checks.items():
         if flag in args:
