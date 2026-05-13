@@ -116,7 +116,7 @@ def simulate_defenses(**options):
 
     server_options: Dict[str, any] = {
         'global_model': NormalMLP(),
-        'max_rounds': 5, # 20
+        'max_rounds': 20, # 20
         'partial_attack': partial,
         'attack_rate': lambda x: x in [5, 6, 7, 17, 18, 19] if partial else x == 19
         # 'attack_rate': lambda x: x in [2, 3, 4] if partial else x == 4
@@ -168,5 +168,5 @@ def simulate_defenses(**options):
         server.register_clients(clients = clients)
         server.run(.5)
         server.run_test(dataset_index = 5, days_count = 5)
-        server.save_metrics(f'defenses/{defense}_{"partial" if partial else "total"}_{run}')
+        server.save_metrics(f'{defense}_{"partial" if partial else "total"}_{run}')
         # server.save_metrics(f'defenses/{defense}_{"partial" if partial else "total"}')
