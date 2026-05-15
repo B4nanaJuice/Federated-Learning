@@ -20,6 +20,6 @@ source /gpfs/home/griesmax/Federated-Learning/venv/bin/activate
 for partial in "partial" "total"; do
     for defense in "fedavg" "krum" "mkrum" "cbaa" "norm" "distance" "distribution"; do
         echo "Grouping data for defense $defense and $partial attack"
-        python /gpfs/home/griesmax/Federated-Learning/run.py group-data --run-count 10 --save-filename "defenses/$defense $partial"
+        python /gpfs/home/griesmax/Federated-Learning/run.py group-data --run-count 10 --save-filename "$defense $partial"
     done
 done
