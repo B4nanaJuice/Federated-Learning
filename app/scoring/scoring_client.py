@@ -11,7 +11,7 @@ from app.scoring.scoring_entity import ScoringEntity, ScoringMetric
 logger = create_logger(__name__)
 
 class ScoringClient(Client, ScoringEntity):
-    def __init__(self, client_id: str, model: nn.Module, **kwargs):
+    def __init__(self, client_id: str, model: nn.Module = NormalMLP(), **kwargs):
 
         Client.__init__(self, client_id = client_id, model = model, **kwargs)
         ScoringEntity.__init__(self, **kwargs)
