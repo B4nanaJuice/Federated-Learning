@@ -10,7 +10,7 @@ from app.models import Server, NormalMLP
 
 def compare_loss(files: List[str]) -> None:
 
-    colors = ['#13579B', '#579B13', '#9B1357', '#57139B', '#9B5713', '#139B9B']
+    colors = ['#13579B', '#579B13', '#9B1357', '#57139B', '#9B5713', '#139B9B', '#9B9B13']
     fig, ax = plt.subplots(1, 1)
 
     for idx in range(len(files)):
@@ -74,7 +74,7 @@ def compare_MSE(files: List[str]) -> None:
         multiplier += 1
 
     # Add some text for labels, title and custom x-axis tick labels, etc.
-    ax.set_ylabel('Mean Absolute Error')
+    ax.set_ylabel('Mean Absolute Error (MAE)')
     ax.set_title('MAE for each target')
     ax.set_xticks(x + width, ['load', 'pv', 'net'])
     ax.legend()
@@ -139,4 +139,112 @@ def compare_scoring(files: List[str]) -> None:
     ax2.spines['top'].set_visible(False)
     ax2.spines['right'].set_visible(False)
 
+    plt.show()
+
+def compare_defenses():
+    defenses: List[str] = ['fedavg', 'norm', 'cbaa', 'krum', 'mkrum', 'distribution', 'distance']
+    malicious_percentages: List[int | str] = list(range(40, 105, 5)) + ['partial', 'total']
+
+    # Data
+    load = np.zeros((len(malicious_percentages), len(defenses)))
+    pv = np.zeros((len(malicious_percentages), len(defenses)))
+    net = np.zeros((len(malicious_percentages), len(defenses)))
+
+    for _p in range(len(malicious_percentages)):
+        p = malicious_percentages[_p]
+        for _d in range(len(defenses)):
+            d = defenses[_d]
+
+            with open(f'save/defenses/{d}_{p}_grouped.json', mode = 'r', encoding = 'utf-8') as f:
+                _data = json.load(f)
+
+            load[_p, _d] = mean_absolute_error(_data['predictions']['load_true'], _data['predictions']['load'])
+            pv[_p, _d] = mean_absolute_error(_data['predictions']['pv_true'], _data['predictions']['pv'])
+            net[_p, _d] = mean_absolute_error(_data['predictions']['net_true'], _data['predictions']['net'])
+
+    # Color line (True = colored, False = black 'n white)
+    color_load: List[bool] = [min(_) in [_[-1], _[-2]] for _ in load]
+    color_pv: List[bool] = [min(_) in [_[-1], _[-2]] for _ in pv]
+    color_net: List[bool] = [min(_) in [_[-1], _[-2]] for _ in net]
+
+    # RBG Image
+    nrows, ncols = load.shape
+
+    norm_load = (load - load.min()) / (load.max() - load.min())
+    norm_pv = (pv - pv.min()) / (pv.max() - pv.min())
+    norm_net = (net - net.min()) / (net.max() - net.min())
+
+    img_load = np.zeros((nrows, ncols, 3))
+    img_pv = np.zeros((nrows, ncols, 3))
+    img_net = np.zeros((nrows, ncols, 3))
+
+    # Colormaps
+    cmap_color = plt.cm.viridis
+
+    for i in range(nrows):
+
+        img_load[i] = cmap_color(load[i])[:, :3] if color_load[i] else np.zeros((len(load[i]), 3)) + .5
+        img_pv[i] = cmap_color(pv[i])[:, :3] if color_pv[i] else np.zeros((len(load[i]), 3)) + .5
+        img_net[i] = cmap_color(net[i])[:, :3] if color_net[i] else np.zeros((len(load[i]), 3)) + .5
+
+    # Plot
+
+    fig, (ax1, ax2, ax3) = plt.subplots(nrows = 1, ncols = 3, layout = 'constrained')
+
+    ax1.imshow(img_load)
+    ax2.imshow(img_pv)
+    ax3.imshow(img_net)
+
+    for i in range(nrows):
+        for j in range(ncols):
+            ax1.text(
+                j, i,
+                str(round(load[i, j], 2)),
+                ha='center',
+                va='center',
+                color='white' if load[i, j] < 1 else 'black'
+            )
+
+            ax2.text(
+                j, i,
+                str(round(pv[i, j], 2)),
+                ha='center',
+                va='center',
+                color='white' if pv[i, j] < 1 else 'black'
+            )
+
+            ax3.text(
+                j, i,
+                str(round(net[i, j], 2)),
+                ha='center',
+                va='center',
+                color='white' if net[i, j] < 1 else 'black'
+            )
+
+    # Labels
+    ax1.set_xticks(range(ncols))
+    ax2.set_xticks(range(ncols))
+    ax3.set_xticks(range(ncols))
+    ax1.set_yticks(range(nrows))
+    ax2.set_yticks(range(nrows))
+    ax3.set_yticks(range(nrows))
+
+
+    ax1.set_xticklabels(defenses, rotation = 90)
+    ax2.set_xticklabels(defenses, rotation = 90)
+    ax3.set_xticklabels(defenses, rotation = 90)
+    ax1.set_yticklabels([f'{_}%' for _ in malicious_percentages])
+    ax2.set_yticklabels([f'{_}%' for _ in malicious_percentages])
+    ax3.set_yticklabels([f'{_}%' for _ in malicious_percentages])
+
+    ax1.set_xlabel("Defense method")
+    ax2.set_xlabel("Defense method")
+    ax3.set_xlabel("Defense method")
+    ax1.set_ylabel("Malicious clients percentage")
+
+    ax1.set_title('MAE on Load forecasting')
+    ax2.set_title('MAE on PV forecasting')
+    ax3.set_title('MAE on Net forecasting')
+
+    # plt.tight_layout()
     plt.show()
