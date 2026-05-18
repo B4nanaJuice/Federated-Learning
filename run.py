@@ -29,6 +29,7 @@ def cmd_check(args: list[str]):
     from app.models import check_dataset, check_models, check_client, check_server
     from app.attacking_models import check_malicious_client
     from app.scoring import check_scoring_entity, check_scoring_server, check_scoring_client
+    from app.degraded import check_network, check_multiline_client
 
     checks = {
         'models':           check_models,
@@ -38,7 +39,9 @@ def cmd_check(args: list[str]):
         'server':           check_server,
         'scoring':          check_scoring_entity,
         'scoring-server':   check_scoring_server,
-        'scoring-client':   check_scoring_client
+        'scoring-client':   check_scoring_client,
+        'network':          check_network,
+        'ml_client':        check_multiline_client
     }
     for flag, fn in checks.items():
         if flag in args:
