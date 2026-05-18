@@ -68,10 +68,20 @@ class Server:
         self.participation_rate = len(self.selected_clients) / len(self.client_registry)
         return self.selected_clients
     
-    def broadcast(self, round: int) -> Dict[str, torch.Tensor]:
+    def broadcast(self, round: int, threaded: bool = config.SIM_THREADED) -> Dict[str, torch.Tensor]:
+
         self.broadcast_model = copy.deepcopy(self.global_model.state_dict())
-        for client in self.selected_clients:
-            client.receive_global_model(self.broadcast_model, round)
+        if threaded:
+            threads: List[threading.Thread] = []
+            for client in self.selected_clients:
+                threads.append(threading.Thread(target = client.receive_global_model, args = (self.broadcast_model, round)))
+
+            [t.start() for t in threads]
+            [t.join() for t in threads]
+        else:
+            for client in self.selected_clients:
+                client.receive_global_model(self.broadcast_model, round)
+            pass
         return self.broadcast_model
     
     def collect_updates(self, threaded: bool = config.SIM_THREADED) -> None:
