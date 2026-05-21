@@ -306,7 +306,7 @@ class AggregationService:
 
         # Convert to flat for similarity computing
         def flatten_weights(weights: Dict[str, torch.Tensor]) -> torch.Tensor:
-            return torch.cat([w.flatten() for w in weights.values()])
+            return torch.cat([w.flatten().cpu() for w in weights.values()])
         
         server_flat = flatten_weights(reference_model)
 
