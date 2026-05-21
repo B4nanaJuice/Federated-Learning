@@ -57,6 +57,36 @@ class CBAAFedAvgServer(Server):
 
         self.current_round += 1
         return
+
+# Trimmed Mean
+class TMeanServer(Server):
+    def aggregate(self) -> None:
+
+        new_state = AggregationService.t_mean(self.received_updates)
+        self.global_model.load_state_dict(new_state)
+
+        self.current_round += 1
+        return
+
+# RFA
+class RFAServer(Server):
+    def aggregate(self) -> None:
+
+        new_state = AggregationService.rfa(self.received_updates)
+        self.global_model.load_state_dict(new_state)
+
+        self.current_round += 1
+        return
+
+# FLTrust
+class FLTrustServer(Server):
+    def aggregate(self) -> None:
+
+        new_state = AggregationService.fl_trust(self.received_updates, self.broadcast_model)
+        self.global_model.load_state_dict(new_state)
+
+        self.current_round += 1
+        return
     
 ## ATTACKED SERVERS
 # Weighted_FedAvg
@@ -105,6 +135,36 @@ class AttackedCBAAFedAvgServer(AttackedServer):
     def aggregate(self) -> None:
 
         new_state = AggregationService.cbaa_fed_avg(self.received_updates)
+        self.global_model.load_state_dict(new_state)
+
+        self.current_round += 1
+        return
+    
+# Trimmed Mean
+class AttackedTMeanServer(AttackedServer):
+    def aggregate(self) -> None:
+
+        new_state = AggregationService.t_mean(self.received_updates)
+        self.global_model.load_state_dict(new_state)
+
+        self.current_round += 1
+        return
+
+# RFA
+class AttackedRFAServer(AttackedServer):
+    def aggregate(self) -> None:
+
+        new_state = AggregationService.rfa(self.received_updates)
+        self.global_model.load_state_dict(new_state)
+
+        self.current_round += 1
+        return
+
+# FLTrust
+class AttackedFLTrustServer(AttackedServer):
+    def aggregate(self) -> None:
+
+        new_state = AggregationService.fl_trust(self.received_updates, self.broadcast_model)
         self.global_model.load_state_dict(new_state)
 
         self.current_round += 1

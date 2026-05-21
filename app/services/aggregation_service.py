@@ -226,3 +226,126 @@ class AggregationService:
             ]).mean(dim=0)
         
         return aggregated_weights
+    
+    # Trimmed Mean aggregation method
+    @staticmethod
+    def t_mean(updates: List[Dict], n_exclude: int = 1, *args, **kwargs) -> Dict[str, torch.Tensor]:
+        
+        aggregated: Dict[str, torch.Tensor] = {}
+        models: List[Dict[str, torch.Tensor]] = [_.get('weights') for _ in updates]
+
+        for key in models[0].keys():
+            stacked = torch.stack([weights[key] for weights in models])
+            sorted_weights, _ = torch.sort(stacked, dim=0)
+            trimmed = sorted_weights[n_exclude:-n_exclude]
+            aggregated[key] = trimmed.mean(dim=0)
+
+        return aggregated
+
+    # Robust federated Aggregation
+    @staticmethod
+    def rfa(updates: List[Dict], norm_type: str = 'l2', *args, **kwargs) -> Dict[str, torch.Tensor]:
+        
+        models: List[Dict[str, torch.Tensor]] = [_.get('weights') for _ in updates]
+
+        # Compute median for each coordinate
+        median_weights = {}
+        for key in models[0].keys():
+            stacked = torch.stack([weights[key] for weights in models])
+            median_weights[key] = torch.median(stacked, dim=0).values
+
+        # Compute distance for each model and median
+        def flatten_weights(weights: Dict[str, torch.Tensor]) -> torch.Tensor:
+            return torch.cat([w.flatten() for w in weights.values()])
+        
+        median_flat = flatten_weights(median_weights)
+        distances = []
+        
+        for i, weights in enumerate(models):
+            weights_flat = flatten_weights(weights)
+            
+            if norm_type == 'l2':
+                dist = torch.norm(weights_flat - median_flat, p = 2).item()
+            elif norm_type == 'l1':
+                dist = torch.norm(weights_flat - median_flat, p = 1).item()
+            else:
+                raise ValueError(f"norm_type doit être 'l1' ou 'l2', reçu: {norm_type}")
+            
+            distances.append((dist, i))
+
+        # Compute threshold
+        dist_values = [d for d, _ in distances]
+        median_dist = np.median(dist_values)
+        mad = np.median([abs(d - median_dist) for d in dist_values])  # Median Absolute Deviation
+        T = median_dist + 2.5 * mad
+
+        # Filter by threshold
+        selected_indices = [idx for dist, idx in distances if dist <= T]
+
+        if len(selected_indices) == 0:
+            logger.info(f"RFA: No model under threshold T={T:.4f}, using median")
+            return median_weights
+        
+        # Aggregate with mean for the selected models
+        selected_weights = [models[i] for i in selected_indices]
+    
+        aggregated = {}
+        for key in selected_weights[0].keys():
+            aggregated[key] = torch.stack([
+                weights[key] for weights in selected_weights
+            ]).mean(dim = 0)
+        
+        return aggregated
+
+    # FLTrust
+    @staticmethod
+    def fl_trust(updates: List[Dict], reference_model: Dict[str, torch.Tensor], *args, **kwargs) -> Dict[str, torch.Tensor]:
+        
+        update_count: int = len(updates)
+        models: List[Dict[str, torch.Tensor]] = [_.get('weights') for _ in updates]
+
+        # Convert to flat for similarity computing
+        def flatten_weights(weights: Dict[str, torch.Tensor]) -> torch.Tensor:
+            return torch.cat([w.flatten() for w in weights.values()])
+        
+        server_flat = flatten_weights(reference_model)
+
+        # Compute trust scores
+        trust_scores = []
+    
+        for i, weights in enumerate(models):
+            weights_flat = flatten_weights(weights)
+            
+            # Cosinus similarity
+            cos_sim = torch.nn.functional.cosine_similarity(
+                weights_flat.unsqueeze(0), 
+                server_flat.unsqueeze(0)
+            ).item()
+            
+            # Using ReLU
+            trust_score = max(0.0, cos_sim)
+            
+            trust_scores.append(trust_score)
+        
+        # Normalize scores
+        total_trust = sum(trust_scores)
+        
+        if total_trust == 0:
+            print("FLTrust: No positive trust score, using FedAvg")
+            trust_scores = [1.0 / update_count] * update_count
+        else:
+            trust_scores = [score / total_trust for score in trust_scores]
+        
+        print(f"FLTrust: Trust score - min={min(trust_scores):.4f}, max={max(trust_scores):.4f}, mean={np.mean(trust_scores):.4f}")
+        
+        # Aggregate with trsuted models
+        aggregated_weights = {}
+        
+        for key in models[0].keys():
+            weighted_sum = sum(
+                trust_scores[i] * models[i][key] 
+                for i in range(update_count)
+            )
+            aggregated_weights[key] = weighted_sum
+        
+        return aggregated_weights

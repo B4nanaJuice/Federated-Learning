@@ -7,9 +7,9 @@ import matplotlib.pyplot as plt
 
 from config import create_logger, config
 from app.models import Client, NormalMLP, Server
-from app.attacking_models import AttackedServer
-from app.scoring import ScoringServer, ScoringMetric, ScoringClient, KrumServer, MKrumServer, NormAggServer, CBAAFedAvgServer
-from app.scoring import AttackedKrumServer, AttackedMKrumServer, AttackedNormAggServer, AttackedCBAAFedAvgServer
+from app.attacking_models import AttackedServer, MaliciousClient
+from app.scoring import ScoringServer, ScoringMetric, ScoringClient, KrumServer, MKrumServer, NormAggServer, CBAAFedAvgServer, TMeanServer, RFAServer, FLTrustServer
+from app.scoring import AttackedKrumServer, AttackedMKrumServer, AttackedNormAggServer, AttackedCBAAFedAvgServer, AttackedTMeanServer, AttackedRFAServer, AttackedFLTrustServer
 
 logger = create_logger(__name__)
 
@@ -112,61 +112,43 @@ def simulate_defenses(**options):
 
     # Get variable parameters
     defense: str = options.get('defense')
-    partial: bool = options.get('partial', 'false').lower() == 'true'
+    malicious_percentage: int = int(options.get('malicious'))
 
     server_options: Dict[str, any] = {
         'global_model': NormalMLP(),
-        'max_rounds': 20, # 20
-        'partial_attack': partial,
-        'attack_rate': lambda x: x in [5, 6, 7, 17, 18, 19] if partial else x == 19
-        # 'attack_rate': lambda x: x in [2, 3, 4] if partial else x == 4
+        'max_rounds': 20
     }
 
-    for run in tqdm(range(10)): # 10
+    for run in tqdm(range(10)):
 
         server: Server = {
-            'fedavg': AttackedServer(**server_options),
-            'krum': AttackedKrumServer(**server_options),
-            'mkrum': AttackedMKrumServer(**server_options),
-            'norm': AttackedNormAggServer(**server_options),
-            'cbaa': AttackedCBAAFedAvgServer(**server_options),
-            'distance': AttackedServer(**server_options),
-            'distribution': AttackedServer(**server_options)
+            'tmean': TMeanServer(**server_options),
+            'rfa': RFAServer(**server_options),
+            'fltrust': FLTrustServer(**server_options)
         }.get(defense)
 
         clients: List[Client] = []
         client_id: int = 1
-        client_count: int = 20 # 20
+        client_count: int = 20
+
+        for _ in range(int(client_count * malicious_percentage / 100)):
+            clients.append(MaliciousClient(
+                client_id = client_id,
+                local_epochs = 15,
+                batch_size = 128,
+                attack_rate = lambda x: True,
+            ))
+            client_id += 1
 
         while client_id <= client_count:
-            if defense == 'distance':
-                clients.append(ScoringClient(
-                    client_id = client_id,
-                    model = NormalMLP(),
-                    local_epochs = 15, # 15
-                    batch_size = 128,
-                    metric = ScoringMetric.DISTANCE,
-                    metric_parameters = {'sigma': 8}
-                ))
-            elif defense == 'distribution':
-                clients.append(ScoringClient(
-                    client_id = client_id,
-                    model = NormalMLP(),
-                    local_epochs = 15, # 15
-                    batch_size = 128,
-                    metric = ScoringMetric.DISTRIBUTION
-                ))
-            else:
-                clients.append(Client(
-                    client_id = client_id,
-                    model = NormalMLP(),
-                    local_epochs = 15, # 15
-                    batch_size = 128
-                ))
+            clients.append(Client(
+                client_id = client_id,
+                local_epochs = 15,
+                batch_size = 128
+            ))
             client_id += 1
 
         server.register_clients(clients = clients)
         server.run(.5)
         server.run_test(dataset_index = 5, days_count = 5)
-        server.save_metrics(f'{defense}_{"partial" if partial else "total"}_{run}')
-        # server.save_metrics(f'defenses/{defense}_{"partial" if partial else "total"}')
+        server.save_metrics(f'defenses/{defense}_{malicious_percentage}_{run}')
