@@ -76,6 +76,8 @@ class Client:
         self.model = self.model.to(device = config.DEVICE)
         self.model.train()
 
+        logger.debug(f'Training local for client {self.client_id}')
+
         for _ in range(self.local_epochs):
             epoch_loss: float = 0.0
             epoch_mae: float = 0.0
