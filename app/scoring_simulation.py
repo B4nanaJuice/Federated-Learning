@@ -108,42 +108,38 @@ def simulate_scoring(**options):
         ))
 
 # Simulate all defenses
+# Simulate all defenses
 def simulate_defenses(**options):
 
     # Get variable parameters
     defense: str = options.get('defense')
-    malicious_percentage: int = int(options.get('malicious'))
+    partial: bool = options.get('partial', 'false').lower() == 'true'
 
     server_options: Dict[str, any] = {
         'global_model': NormalMLP(),
-        'max_rounds': 20
+        'max_rounds': 20, # 20
+        'partial_attack': partial,
+        'attack_rate': lambda x: x in [5, 6, 7, 17, 18, 19] if partial else x == 19
+        # 'attack_rate': lambda x: x in [2, 3, 4] if partial else x == 4
     }
 
-    for run in tqdm(range(10)):
+    for run in tqdm(range(10)): # 10
 
         server: Server = {
-            'tmean': TMeanServer(**server_options),
-            'rfa': RFAServer(**server_options),
-            'fltrust': FLTrustServer(**server_options)
+            'tmean': AttackedTMeanServer(**server_options),
+            'rfa': AttackedRFAServer(**server_options),
+            'fltrust': AttackedFLTrustServer(**server_options)
         }.get(defense)
 
         clients: List[Client] = []
         client_id: int = 1
-        client_count: int = 20
-
-        for _ in range(int(client_count * malicious_percentage / 100)):
-            clients.append(MaliciousClient(
-                client_id = client_id,
-                local_epochs = 15,
-                batch_size = 128,
-                attack_rate = lambda x: True,
-            ))
-            client_id += 1
+        client_count: int = 20 # 20
 
         while client_id <= client_count:
             clients.append(Client(
                 client_id = client_id,
-                local_epochs = 15,
+                model = NormalMLP(),
+                local_epochs = 15, # 15
                 batch_size = 128
             ))
             client_id += 1
@@ -151,4 +147,5 @@ def simulate_defenses(**options):
         server.register_clients(clients = clients)
         server.run(.5)
         server.run_test(dataset_index = 5, days_count = 5)
-        server.save_metrics(f'defenses/{defense}_{malicious_percentage}_{run}')
+        server.save_metrics(f'{defense}_{"partial" if partial else "total"}_{run}')
+        # server.save_metrics(f'defenses/{defense}_{"partial" if partial else "total"}')
