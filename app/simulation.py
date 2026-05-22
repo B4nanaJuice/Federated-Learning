@@ -225,7 +225,7 @@ def data_grouping(**options) -> None:
     training_loss: List[List[float]] = None
 
     for _ in range(run_count):
-        with open(f'{config.SAVE_DATA_PATH}/{save_filename}_{_}.json', mode = 'r', encoding = 'utf-8') as f:
+        with open(f'{config.SAVE_DATA_PATH}/defenses/{save_filename}_{_}.json', mode = 'r', encoding = 'utf-8') as f:
             data: Dict = json.load(fp = f)
 
         if predictions['load'].shape[0] == 0:
