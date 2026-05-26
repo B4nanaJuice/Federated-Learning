@@ -10,7 +10,7 @@ from app.models import Server, NormalMLP
 
 def compare_loss(files: List[str]) -> None:
 
-    colors = ['#13579B', '#579B13', '#9B1357', '#57139B', '#9B5713', '#139B9B', '#9B9B13']
+    # colors = ['#13579B', '#579B13', '#9B1357', '#57139B', '#9B5713', '#139B9B', '#9B9B13']
     fig, ax = plt.subplots(1, 1)
 
     for idx in range(len(files)):
@@ -19,13 +19,13 @@ def compare_loss(files: List[str]) -> None:
         server.load_metrics(filename = file)
 
         avg_loss: List[float] = [sum(_)/len(_) for _ in server.training_loss]
-        ax.plot(avg_loss, label = file, color = colors[idx])
-        average = sum(avg_loss)/len(avg_loss)
-        ax.hlines(average, 0, len(avg_loss)-1, label = f'Avg {file}', linestyles = 'dashed', colors = colors[idx])
+        ax.plot(avg_loss, label = file)
+        # average = sum(avg_loss)/len(avg_loss)
+        # ax.hlines(average, 0, len(avg_loss)-1, label = f'Avg {file}', linestyles = 'dashed', colors = colors[idx])
 
     ax.set_xlabel('Round id')
     ax.set_ylabel('Mean Square Error Loss')
-    ax.set_title('Comparison of average training loss for clean run and poisoning attacks')
+    ax.set_title('Comparison of training loss')
     # plt.grid(axis = 'y')
     ax.set_yscale('log')
     ax.spines['top'].set_visible(False)
@@ -142,8 +142,8 @@ def compare_scoring(files: List[str]) -> None:
     plt.show()
 
 def compare_defenses():
-    defenses: List[str] = ['fedavg', 'norm', 'cbaa', 'krum', 'mkrum', 'distribution', 'distance']
-    malicious_percentages: List[int | str] = list(range(40, 105, 5)) + ['partial', 'total']
+    defenses: List[str] = ['fedavg', 'norm', 'cbaa', 'krum', 'mkrum', 'tmean', 'rfa', 'fltrust', 'distribution', 'distance']
+    malicious_percentages: List[int | str] = [0, 5, 10, 20, 30, 40, 50, 60, 70, 75, 80, 85, 90, 95, 100, 'partial', 'total']
 
     # Data
     load = np.zeros((len(malicious_percentages), len(defenses)))
@@ -189,11 +189,11 @@ def compare_defenses():
 
     # Plot
 
-    fig, (ax1, ax2, ax3) = plt.subplots(nrows = 1, ncols = 3, layout = 'constrained')
+    fig, (ax1, ax2) = plt.subplots(nrows = 1, ncols = 2, layout = 'constrained')
 
     ax1.imshow(img_load)
     ax2.imshow(img_pv)
-    ax3.imshow(img_net)
+    # ax3.imshow(img_net)
 
     for i in range(nrows):
         for j in range(ncols):
@@ -213,38 +213,38 @@ def compare_defenses():
                 color='white' if pv[i, j] < 1 else 'black'
             )
 
-            ax3.text(
-                j, i,
-                str(round(net[i, j], 2)),
-                ha='center',
-                va='center',
-                color='white' if net[i, j] < 1 else 'black'
-            )
+            # ax3.text(
+            #     j, i,
+            #     str(round(net[i, j], 2)),
+            #     ha='center',
+            #     va='center',
+            #     color='white' if net[i, j] < 1 else 'black'
+            # )
 
     # Labels
     ax1.set_xticks(range(ncols))
     ax2.set_xticks(range(ncols))
-    ax3.set_xticks(range(ncols))
+    # ax3.set_xticks(range(ncols))
     ax1.set_yticks(range(nrows))
     ax2.set_yticks(range(nrows))
-    ax3.set_yticks(range(nrows))
+    # ax3.set_yticks(range(nrows))
 
 
     ax1.set_xticklabels(defenses, rotation = 90)
     ax2.set_xticklabels(defenses, rotation = 90)
-    ax3.set_xticklabels(defenses, rotation = 90)
-    ax1.set_yticklabels([f'{_}%' for _ in malicious_percentages])
-    ax2.set_yticklabels([f'{_}%' for _ in malicious_percentages])
-    ax3.set_yticklabels([f'{_}%' for _ in malicious_percentages])
+    # ax3.set_xticklabels(defenses, rotation = 90)
+    ax1.set_yticklabels([f'{_}%' if type(_) == int else _ for _ in malicious_percentages])
+    ax2.set_yticklabels([f'{_}%' if type(_) == int else _ for _ in malicious_percentages])
+    # ax3.set_yticklabels([f'{_}%' for _ in malicious_percentages])
 
     ax1.set_xlabel("Defense method")
     ax2.set_xlabel("Defense method")
-    ax3.set_xlabel("Defense method")
+    # ax3.set_xlabel("Defense method")
     ax1.set_ylabel("Malicious clients percentage")
 
     ax1.set_title('MAE on Load forecasting')
     ax2.set_title('MAE on PV forecasting')
-    ax3.set_title('MAE on Net forecasting')
+    # ax3.set_title('MAE on Net forecasting')
 
     # plt.tight_layout()
     plt.show()
