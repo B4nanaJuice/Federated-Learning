@@ -1,6 +1,8 @@
 # Imports
+import os
 import json
 import numpy as np
+from glob import glob
 from tqdm import tqdm
 from typing import List, Callable, Dict
 
@@ -202,89 +204,46 @@ def multi_run(**options):
         server.run_test()
         server.save_metrics(f'{save_filename}_{run}')
 
-def data_grouping(**options) -> None:
+def data_grouping(**options) -> Dict[str, any]:
 
     save_filename: str = options.get('save-filename', 'run').replace(' ', '_')
-    run_count: int = int(options.get('run-count', 5))
+    logger.info(f'Beginning data grouping for files {save_filename}.')
 
-    predictions: Dict[str, np.ndarray] = {
-        'load': np.array([]),
-        'pv': np.array([]),
-        'net': np.array([])
+    run_count: int = len(glob(f'{config.SAVE_DATA_PATH}/{save_filename}*'))
+    logger.info(f'Found {run_count} files.')
+    
+    metrics_name: List[str] = ['MAE', 'MSE', 'RMSE']
+    columns: List[str] = ['load', 'pv', 'net']
+
+    output_data: Dict[str, any] = {
+        'training_loss': None,
+        'MAE': {k: [] for k in ['load', 'pv', 'net']},
+        'MSE': {k: [] for k in ['load', 'pv', 'net']},
+        'RMSE': {k: [] for k in ['load', 'pv', 'net']}
     }
-
-    test_MSE: Dict[str, float] = {
-        'load': 0.0,
-        'pv': 0.0,
-        'net': 0.0
-    }
-
-    MAE: Dict[str, List[float]] = {}
-    RMSE: Dict[str, List[float]] = {}
-
-    training_loss: List[List[float]] = None
 
     for _ in range(run_count):
-        with open(f'{config.SAVE_DATA_PATH}/defenses/{save_filename}_{_}.json', mode = 'r', encoding = 'utf-8') as f:
+        with open(f'{config.SAVE_DATA_PATH}/{save_filename}_{_}.json', mode = 'r', encoding = 'utf-8') as f:
             data: Dict = json.load(fp = f)
 
-        if predictions['load'].shape[0] == 0:
-            predictions['load'] = np.array(data['predictions']['load'], dtype = np.float32)
-            predictions['pv'] = np.array(data['predictions']['pv'], dtype = np.float32)
-            predictions['net'] = np.array(data['predictions']['net'], dtype = np.float32)
+        # Append training loss
+        if not output_data['training_loss']:
+            output_data['training_loss'] = [data['training_loss']]
         else:
-            predictions['load'] += np.array(data['predictions']['load'], dtype = np.float32)
-            predictions['pv'] += np.array(data['predictions']['pv'], dtype = np.float32)
-            predictions['net'] += np.array(data['predictions']['net'], dtype = np.float32)
+            output_data['training_loss'] = np.append(output_data['training_loss'], [data['training_loss']], axis = 0).tolist()
 
-        test_MSE['load'] += data['test_MSE']['load']
-        test_MSE['pv'] += data['test_MSE']['pv']
-        test_MSE['net'] += data['test_MSE']['net']
+        # Append each metric for each column
+        for _m in metrics_name:
+            for _c in columns:
+                output_data[_m][_c].append(data[_m][_c])
 
-        if not training_loss:
-            training_loss = data['training_loss']
-        else:
-            for _ in range(len(data['training_loss'])):
-                training_loss[_] += data['training_loss'][_]
-
-        for k in data['MAE'].keys():
-            if k not in MAE:
-                MAE[k] = []
-                RMSE[k] = []
-
-            MAE[k] += data['MAE'][k]
-            RMSE[k] += data['RMSE'][k]
-
-    predictions['load'] /= run_count
-    predictions['pv'] /= run_count
-    predictions['net'] /= run_count
-    predictions['load_true'] = data['predictions']['load_true']
-    predictions['pv_true'] = data['predictions']['pv_true']
-    predictions['net_true'] = data['predictions']['net_true']
-
-    test_MSE['load'] /= run_count
-    test_MSE['pv'] /= run_count
-    test_MSE['net'] /= run_count
-
-    output_data: Dict = {
-        'predictions': {
-            k: v.tolist() if type(v) == np.ndarray else v
-            for k, v in predictions.items()
-        },
-        'test_MSE': test_MSE,
-        'training_loss': training_loss,
-        'MAE': MAE,
-        'RMSE': RMSE
-    }
-
-    with open(f'{config.SAVE_DATA_PATH}/{save_filename}_grouped.json', mode = 'w', encoding = 'utf-8') as f:
+    # Check if the output data can be written in the file (create a new directory if needed)
+    if not os.path.exists(f'{config.SAVE_DATA_PATH}/grouping'):
+        logger.info(f'Grouping directory not found. Creating one.')
+        os.makedirs(f'{config.SAVE_DATA_PATH}/grouping')
+    with open(f'{config.SAVE_DATA_PATH}/grouping/{save_filename}.json', mode = 'w', encoding = 'utf-8') as f:
         f.write(json.dumps(output_data, indent = 4))
 
-    return
-
-def show_simulation_results(filename: str) -> None:
-    server: Server = Server(global_model = NormalMLP())
-    server.load_metrics(filename)
-    server.plot()
-    return
+    logger.info(f'Data grouping for {save_filename} ended successfully !')
+    return output_data
     
