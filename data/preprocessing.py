@@ -46,7 +46,7 @@ def preprocess_date(df: pd.DataFrame) -> pd.DataFrame:
         pd.DataFrame: A new DataFrame with the original columns plus the new 'weekday', 'sin_time', and 'cos_time' columns.
     """
     df['date'] = pd.to_datetime(df['date'])
-    df['weekday'] = df['date'].dt.weekday
+    df['weekday'] = (df['date'].dt.weekday < 5).astype(int) # Weekday into 'is weekday'
     df['hour'] = df['date'].dt.hour
     df['minute'] = df['date'].dt.minute
     df['time_in_minutes'] = df['hour'] * 60 + df['minute']
