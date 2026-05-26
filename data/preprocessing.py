@@ -131,7 +131,7 @@ def normalize_weather_data(df: pd.DataFrame) -> pd.DataFrame:
             df[col] = (df[col] - mean_val) / std_val
     return df
 
-def split_data(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+def split_data(df: pd.DataFrame, frac: tuple[int, int, int] = [.7, .2, .1]) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
     Splits the input DataFrame into three separate DataFrames for training, validation, and testing.
     The split is done chronologically without shuffling, with 70% of the data used for training, 20% for validation, and 10% for testing.
@@ -142,8 +142,8 @@ def split_data(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFra
     Returns:
         tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]: A tuple containing the training, validation, and testing DataFrames.
     """
-    train_size: int = int(0.7 * len(df))
-    val_size: int = int(0.2 * len(df))
+    train_size: int = int(frac[0] * len(df))
+    val_size: int = int(frac[1] * len(df))
 
     train_df: pd.DataFrame = df.iloc[:train_size]
     val_df: pd.DataFrame = df.iloc[train_size:train_size + val_size]
