@@ -21,7 +21,8 @@ def parse_named_options(args: list[str]) -> dict:
 def cmd_preprocess():
     logger.info('Running data preprocessing...')
     from data import run_preprocessing
-    run_preprocessing()
+    iid: bool = sys.argv[-1] == 'iid'
+    run_preprocessing(iid = iid)
 
 
 def cmd_check(args: list[str]):
