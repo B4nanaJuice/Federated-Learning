@@ -23,6 +23,7 @@ class Client:
                  local_epochs: int = 5, 
                  batch_size: int = 32,
                  learning_rate: float = 0.001,
+                 iid: bool = False,
                  **kwargs
                  ):
         
@@ -31,12 +32,12 @@ class Client:
         self.round_id: int = 0
 
         # Local data
-        self._train_tensor: torch.Tensor = torch.load(f'data/processed/train/building_{client_id}.pt')
+        self._train_tensor: torch.Tensor = torch.load(f'data/processed/train/{"iid" if iid else "noniid"}/building_{client_id}.pt')
         self._train_features: torch.Tensor = self._train_tensor[:, :-3]
         self._train_targets: torch.Tensor = self._train_tensor[:, -3:]
         self.train_dataset: EnergyDataset = EnergyDataset(self._train_features, self._train_targets)
 
-        self._validation_tensor: torch.Tensor = torch.load(f'data/processed/val/building_{client_id}.pt')
+        self._validation_tensor: torch.Tensor = torch.load(f'data/processed/val/{"iid" if iid else "noniid"}/building_{client_id}.pt')
         self._validation_features: torch.Tensor = self._validation_tensor[:, :-3]
         self._validation_targets: torch.Tensor = self._validation_tensor[:, -3:]
         self.validation_dataset: EnergyDataset = EnergyDataset(self._validation_features, self._validation_targets)
@@ -193,7 +194,7 @@ def check_client():
     mae = sum(client.MAE)/len(client.MAE)
     rmse = sum(client.RMSE)/len(client.RMSE)
 
-    logger.info(f'Compute time : {compute_time:.8f}')
+    logger.info(f'Compute time : {compute_time:.8f}s')
     logger.info(f'Train loss (MSE) : {mse:.8f}')
     logger.info(f'MAE : {mae:.8f}')
     logger.info(f'RMSE : {rmse:.8f}')
