@@ -8,7 +8,7 @@ import torch.nn as nn
 from tqdm import tqdm
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, root_mean_squared_error, mean_absolute_error
 from typing import Optional, Callable, Dict, List
 
 from app.models.client import Client
@@ -143,7 +143,7 @@ class Server:
         self.global_model.eval()
 
         # Get data
-        _tensor: torch.Tensor = torch.load(f'data/processed/test/building_{dataset_index}.pt')
+        _tensor: torch.Tensor = torch.load(f'data/processed/test/iid/building_{dataset_index}.pt')
         features: torch.Tensor = _tensor[:, :-3]
         targets: torch.Tensor = _tensor[:, -3:]
         dataset: EnergyDataset = EnergyDataset(features, targets)
@@ -293,11 +293,17 @@ class Server:
     def save_metrics(self, filename: str) -> None:
         # Convert attributes to dict
         metrics: Dict[str, any] = {
-            'predictions': self.test_predictions,
-            'test_MSE': self.test_MSE,
             'training_loss': self.training_loss,
-            'MAE': self.MAE,
-            'RMSE': self.RMSE
+            'MAE': {
+                k: mean_absolute_error(self.test_predictions[f'{k}_true'], self.test_predictions[k])
+                for k in ['load', 'pv', 'net']
+            }, 'MSE': {
+                k: mean_squared_error(self.test_predictions[f'{k}_true'], self.test_predictions[k])
+                for k in ['load', 'pv', 'net']
+            }, 'RMSE': {
+                k: root_mean_squared_error(self.test_predictions[f'{k}_true'], self.test_predictions[k])
+                for k in ['load', 'pv', 'net']
+            }
         }
 
         # Save dict to file
