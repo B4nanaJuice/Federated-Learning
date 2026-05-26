@@ -2,11 +2,8 @@
 import copy
 import time
 import torch
-import numpy as np
 import torch.nn as nn
-import matplotlib as mpl
 from typing import Dict, List
-import matplotlib.pyplot as plt
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 from config import create_logger, config
@@ -56,8 +53,6 @@ class Client:
         self.compute_time: float = 0.0
         self.hist_train_loss: List[float] = []
         self.hist_validation_loss: List[float] = []
-        self.MAE: List[float] = []
-        self.RMSE: List[float] = []
 
     def receive_global_model(self, global_weights: Dict[int, torch.Tensor], round_id: int) -> None:
         """
@@ -104,8 +99,6 @@ class Client:
 
             self.train_loss = epoch_loss / self.num_samples
             self.hist_train_loss.append(self.train_loss)
-            self.MAE.append(epoch_mae / self.num_samples)
-            self.RMSE.append(np.sqrt(epoch_rmse / self.num_samples))
 
             # Validation
             with torch.no_grad():
@@ -122,9 +115,6 @@ class Client:
                     logger.info(f'Client {self.client_id} stopped early at epoch {_+1}.')
                     break
 
-        # Add differntial privacy noise to delta weights
-        # Add compression to delta weights
-
         self.compute_time = time.time() - t0
 
         return
@@ -138,49 +128,9 @@ class Client:
     def send_update(self) -> Dict:
         return {
             'client_id': self.client_id,
-            'round_id': self.round_id,
-            'num_samples': self.num_samples,
             'weights': copy.deepcopy(self.model.state_dict()),
             'train_loss': self.train_loss,
-            'MAE': self.MAE,
-            'RMSE': self.RMSE
         }
-    
-    def plot(self) -> None:
-
-        fig = plt.figure()
-        gs = mpl.gridspec.GridSpec(3, 1, wspace = 0.25, hspace = 1)
-
-        loss_plot = fig.add_subplot(gs[0, 0])
-        x: List[int] = list(range(1, len(self.hist_train_loss) + 1))
-        loss_plot.plot(x, self.hist_train_loss, label = 'Train Loss', color = '#133E71')
-        loss_plot.plot(x, self.hist_validation_loss, label = 'Validation Loss', color = '#009FE3')
-        loss_plot.set_title('')
-        loss_plot.set_xlabel('Epoch')
-        loss_plot.set_ylabel('Mean Squared Error (MSE) Loss')
-
-        mae_plot = fig.add_subplot(gs[1, 0])
-        mae_plot.boxplot(self.MAE, label = 'MAE')
-        mae_plot.set_title('Mean Absolute Error (MAE)')
-        mae_plot.set_xlabel('Client ID')
-        mae_plot.set_ylabel('MAE')
-
-        rmse_plot = fig.add_subplot(gs[2, 0])
-        rmse_plot.boxplot(self.RMSE, label = 'RMSE')
-        rmse_plot.set_title('Root Mean Squared Error (RMSE)')
-        rmse_plot.set_title('Mean Absolute Error (MAE)')
-        rmse_plot.set_xlabel('Client ID')
-        rmse_plot.set_ylabel('RMSE')
-        
-
-        for _ in [loss_plot, mae_plot, rmse_plot]:
-            _.legend()
-            _.spines['top'].set_visible(False)
-            _.spines['right'].set_visible(False)
-            _.grid(axis = 'y')
-
-        plt.show()
-        return
 
 # Method to check if client's training works
 def check_client():
