@@ -141,13 +141,9 @@ def check_client():
 
     compute_time = client.compute_time
     mse = client.train_loss
-    mae = sum(client.MAE)/len(client.MAE)
-    rmse = sum(client.RMSE)/len(client.RMSE)
 
     logger.info(f'Compute time : {compute_time:.8f}s')
     logger.info(f'Train loss (MSE) : {mse:.8f}')
-    logger.info(f'MAE : {mae:.8f}')
-    logger.info(f'RMSE : {rmse:.8f}')
 
     client.plot()
     

@@ -177,14 +177,12 @@ def check_server():
 
     logger.info(f'Starting test phase')
     server.run_test(dataset_index = 1, days_count = 10)
-    # server.plot()
 
     server.save_model('check_server')
     server.save_metrics('check_server')
 
     _s: Server = Server(NormalMLP())
     _s.load_metrics('check_server')
-    # _s.plot()
 
     assert _s.training_loss is not None
     assert len(_s.test_predictions) == len(server.test_predictions)
