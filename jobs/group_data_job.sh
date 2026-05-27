@@ -17,10 +17,6 @@ spack load py-pip ^python@3.11.9
 mkdir -p output
 source /gpfs/home/griesmax/Federated-Learning/venv/bin/activate
 
-python /gpfs/home/griesmax/Federated-Learning/run.py group-data --run-count 10 --save-filename "fltrust_partial"
-python /gpfs/home/griesmax/Federated-Learning/run.py group-data --run-count 10 --save-filename "fltrust_total"
-python /gpfs/home/griesmax/Federated-Learning/run.py group-data --run-count 10 --save-filename "rfa_partial"
-python /gpfs/home/griesmax/Federated-Learning/run.py group-data --run-count 10 --save-filename "rfa_total"
-python /gpfs/home/griesmax/Federated-Learning/run.py group-data --run-count 10 --save-filename "tmean_partial"
-python /gpfs/home/griesmax/Federated-Learning/run.py group-data --run-count 10 --save-filename "tmean_total"
-python /gpfs/home/griesmax/Federated-Learning/run.py group-data --run-count 10 --save-filename "tmean_100"
+for file in "5%_clients_data" "20%_clients_data" "partial_corruption" "total_takeover"; do
+    python /gpfs/home/griesmax/Federated-Learning/run.py group-data --save-filename "$file"
+done
