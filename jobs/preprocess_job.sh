@@ -17,4 +17,5 @@ spack load py-pip ^python@3.11.9
 mkdir -p output
 source /gpfs/home/griesmax/Federated-Learning/venv/bin/activate
 
-python run.py preprocess
+python run.py preprocess iid
+python run.py preprocess noniid
