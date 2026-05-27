@@ -142,7 +142,7 @@ class Server:
 
         return
 
-    def save_metrics(self, filename: str) -> None:
+    def save_metrics(self, filename: str) -> Dict[str, any]:
         # Convert attributes to dict
         metrics: Dict[str, any] = {
             'training_loss': self.training_loss,
@@ -161,7 +161,7 @@ class Server:
         # Save dict to file
         with open(f'{config.SAVE_DATA_PATH}/{filename}.json', mode = 'w', encoding = 'utf-8') as f:
             f.write(json.dumps(metrics, indent = 4))
-        return
+        return metrics # Returning metrics in case we need directly after computing
 
 def check_server():
     logger.info('Starting server check')
