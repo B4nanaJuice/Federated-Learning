@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #SBATCH --account="r260042"
-#SBATCH --time=5:30:00
+#SBATCH --time=6:00:00
 #SBATCH --mem=16G
 #SBATCH --constraint=armgpu
 #SBATCH --nodes=2
