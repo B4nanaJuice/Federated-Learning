@@ -127,16 +127,15 @@ def multi_run(**options):
 
     # Get parsed cli options
     attacked_server: bool = bool(eval(options.get('attacked-server', 'False')))
-    model = NormalMLP if options.get('model', 'normalmlp').lower() == 'normalmlp' else SoftGatedMoE
-    max_rounds: int = int(options.get('max-rounds', 10))
-    min_clients: int = int(options.get('min-clients', 10))
+    model = NormalMLP
+    max_rounds: int = int(options.get('max-rounds', 20))
     server_attack_rate: float | Callable = eval(options.get('server-attack-rate', '.2'))
     server_attack_method: str = options.get('server-attack-method', 'uniform_noise')
     partial_attack: bool = options.get('partial-attack', 'False') == 'True'
 
-    total_clients: int = int(options.get('total-clients', 10))
+    total_clients: int = int(options.get('total-clients', 20))
     malicious_client_count: int = int(options.get('malicious-client-count', 0))
-    epochs: int = int(options.get('epochs', 10))
+    epochs: int = int(options.get('epochs', 15))
     batch_size: int = int(options.get('batch-size', 128))
     learning_rate: float = float(options.get('lr', 1e-3))
     client_attack_rate: float | Callable = eval(options.get('client-attack-rate', '.2'))
@@ -157,7 +156,6 @@ def multi_run(**options):
             server: Server = AttackedServer(
                 global_model = model(),
                 max_rounds = max_rounds,
-                min_clients = min_clients,
                 attack_rate = server_attack_rate,
                 attack_method = server_attack_method,
                 partial_attack = partial_attack
@@ -165,8 +163,7 @@ def multi_run(**options):
         else:
             server: Server = Server(
                 global_model = model(),
-                max_rounds = max_rounds,
-                min_clients = min_clients
+                max_rounds = max_rounds
             )
 
         # Clients
