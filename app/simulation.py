@@ -201,6 +201,7 @@ def multi_run(**options):
         server.run_test()
         server.save_metrics(f'{save_filename}_{run}')
 
+# Method for data grouping
 def data_grouping(**options) -> Dict[str, any]:
 
     save_filename: str = options.get('save-filename', 'run').replace(' ', '_')
@@ -224,10 +225,11 @@ def data_grouping(**options) -> Dict[str, any]:
             data: Dict = json.load(fp = f)
 
         # Append training loss
+        # Output list of list is a matrix with run_count rows and rounds columns
         if not output_data['training_loss']:
-            output_data['training_loss'] = [data['training_loss']]
+            output_data['training_loss'] = [np.array(data['training_loss']).mean(axis = 1)]
         else:
-            output_data['training_loss'] = np.append(output_data['training_loss'], [data['training_loss']], axis = 0).tolist()
+            output_data['training_loss'] = np.append(output_data['training_loss'], [np.array(data['training_loss']).mean(axis = 1)], axis = 0).tolist()
 
         # Append each metric for each column
         for _m in metrics_name:
