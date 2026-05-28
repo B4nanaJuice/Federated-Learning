@@ -21,6 +21,7 @@ save/
 
 # Temp documentation
 documentation/
+synthèses/
 
 # Validation dataset for metric
 app/scoring/Validation_dataset.pt
