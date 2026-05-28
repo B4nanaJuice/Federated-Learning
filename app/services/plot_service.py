@@ -83,7 +83,7 @@ class PlotService:
             _max = data[f'{files[i//3]}_max'][f'{["load", "pv", "net"][i%3]}']
             plt.vlines(patch.get_x() + patch.get_width() / 2, _min, _max, color = 'k')
         
-
+        plt.title('Mean Absolute Error for model testing after attack')
         plt.show()
         return
     
@@ -128,14 +128,15 @@ class PlotService:
             plt.fill_between(x_range, df['min'], df['max'], color = color)
 
             # Show the range of the loss if behind other range, optionnal (can be removed for clarity)
-            plt.plot(x_range, df['min'], '--', color = color)
-            plt.plot(x_range, df['max'], '--', color = color)
+            # plt.plot(x_range, df['min'], '--', color = color)
+            # plt.plot(x_range, df['max'], '--', color = color)
 
-        plt.title('Training loss')
+        plt.title('Training loss for different attacks')
         plt.xlabel('Round')
         plt.ylabel('Mean Square Error (MSE) Loss')
         plt.yscale('log')
         plt.xticks(x_range)
+        plt.legend()
         plt.show()
         return
 
