@@ -17,6 +17,6 @@ spack load py-pip ^python@3.11.9
 mkdir -p output
 source /gpfs/home/griesmax/Federated-Learning/venv/bin/activate
 
-for file in "5%_clients_data" "20%_clients_data" "partial_corruption" "total_takeover"; do
+for file in "5%_clients_model" "20%_clients_model" "clean_run" "clients_gradient_amplification" "clients_gradient_inversion"; do
     python /gpfs/home/griesmax/Federated-Learning/run.py group-data --save-filename "$file"
 done
