@@ -116,25 +116,26 @@ class PlotService:
     def _plot_loss(dfs: List[pd.DataFrame], files: List[str]) -> None:
         
         assert len(dfs) == len(files)
+        x_range: List[int] = list(range(1, len(dfs[0]['avg']) + 1))
 
         for df, file in zip(dfs, files):
             # Plot average line
-            line = plt.plot(df['avg'], label = file)[0]
+            line = plt.plot(x_range, df['avg'], label = file)[0]
 
-            # Get mline color in hex format
+            # Error range with a lighter color
             color: str = line.get_color().replace('#', '')
-
-            # Lighten the color
             color = PlotService.lighten_color(color = color, amount = 100)
+            plt.fill_between(x_range, df['min'], df['max'], color = color)
 
-            # Fill between with the lightened color
-            plt.fill_between(range(len(df['avg'])), df['min'], df['max'], color = color)
+            # Show the range of the loss if behind other range, optionnal (can be removed for clarity)
+            plt.plot(x_range, df['min'], '--', color = color)
+            plt.plot(x_range, df['max'], '--', color = color)
 
         plt.title('Training loss')
         plt.xlabel('Round')
         plt.ylabel('Mean Square Error (MSE) Loss')
         plt.yscale('log')
-        plt.legend()
+        plt.xticks(x_range)
         plt.show()
         return
 
