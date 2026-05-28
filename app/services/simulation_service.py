@@ -4,7 +4,9 @@ import numpy as np
 from typing import List, Dict
 
 from config import create_logger, config
-from app.models import NormalMLP, Client
+# from app.models import NormalMLP, Client
+from app.models.client import Client
+from app.models.model import NormalMLP
 from app.scoring import ScoringMetric, ScoringServer
 
 logger = create_logger(__name__)
