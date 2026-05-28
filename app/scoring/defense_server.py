@@ -181,7 +181,7 @@ class AttackedFLTrustServer(AttackedServer):
         return
     
 # CLRA
-class CLRAServer(AttackedServer):
+class AttackedCLRAServer(AttackedServer):
     def aggregate(self) -> None:
 
         new_state = AggregationService.clra(self.received_updates, self.broadcast_model)
