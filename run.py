@@ -58,8 +58,8 @@ def cmd_run_simulation(args: list[str]):
 def cmd_run_scoring_simulation(args: list[str]):
     logger.info('Running scoring simulation...')
     options = parse_named_options(args)
-    from app import simulate_scoring
-    simulate_scoring(**options)
+    from app.services import SimulationService
+    SimulationService.sigma_measurment(**options)
 
 def cmd_run_defenses_simulation(args: list[str]):
     logger.info('Running scoring simulation...')
@@ -88,19 +88,6 @@ def cmd_group_data(args: list[str]):
     from app import data_grouping
     data_grouping(**options)
 
-
-def cmd_show_results():
-    logger.info('Showing multirun results...')
-    from app.plots import compare_loss, compare_MSE
-    compare_loss([
-        'partial_corruption_0',
-        'partial_corruption_1',
-        'total_takeover_0',
-        'total_takeover_1',
-        'clean_run_grouped'
-    ])
-
-
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print(f"Usage: python run.py <command>\nAvailable commands: {', '.join(COMMANDS)}")
@@ -116,7 +103,6 @@ if __name__ == "__main__":
         case 'run-defenses':    cmd_run_defenses_simulation(extra_args)
         case 'test':            cmd_test(extra_args)
         case 'group-data':      cmd_group_data(extra_args)
-        case 'show-results':    cmd_show_results()
         case _:
             print(f"Unknown command: '{command}'\nAvailable commands: {', '.join(COMMANDS)}")
             sys.exit(1)
