@@ -26,7 +26,7 @@ class SimulationService:
         ## Scoring parameters
         scoring_metric: ScoringMetric = ScoringMetric[options.get('metric', 'distance').upper()]
         scoring_threshold: float = .4
-        scoring_sigmas: List[float] = np.linspace(1, 10, 21).tolist() # 1, 1.5, 2, 2.5, ...
+        scoring_sigmas: List[float] = np.linspace(0.01, 1, 21).tolist()
 
         ## Client parameters
         client_count: int = 10
