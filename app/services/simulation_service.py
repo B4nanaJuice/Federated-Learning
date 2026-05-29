@@ -8,7 +8,7 @@ from typing import List, Dict
 from config import create_logger, config
 from app.models import NormalMLP, Client
 from app.scoring import ScoringMetric, ScoringServer, ScoringClient
-from app.attacking_models import AttackedServer
+from app.attacking_models import AttackedServer, MaliciousClient
 
 logger = create_logger(__name__)
 
@@ -152,7 +152,74 @@ class SimulationService:
     # Simulate server scoring
     @staticmethod
     def simulate_server_scoring(*args, **options) -> None:
-        pass
+
+        # Simulation parameters from options
+        ## Overall parameters
+        run_count: int = 10
+        save_filename: str = options.get('save-filename', 'scoring')
+
+        ## Attack parameters
+        malicious_percentage: float = float(options.get('malicious', 0))
+        assert 0 <= malicious_percentage <= 100
+
+        ## Scoring parameters
+        scoring_metric: ScoringMetric = ScoringMetric[options.get('metric', 'distance').upper()]
+        scoring_threshold: float = .4
+        scoring_parameters: Dict[str, float] | None = {
+            ScoringMetric.DISTANCE: {'sigma': 6.8},
+            ScoringMetric.DATASET: {'sigma': .3}
+        }.get(scoring_metric)
+
+        ## Server parameters
+        server_max_rounds: int = 20
+
+        ## Client parameters
+        client_count: int = 20
+        client_epochs: int = 15
+        client_batch_size: int = 128
+        client_lr: float = 1e-3
+        client_fraction: float = .5
+
+        for run in range(run_count):
+            
+            # Create Scoring server
+            server: ScoringServer = ScoringServer(
+                global_model = NormalMLP(),
+                max_rounds = server_max_rounds,
+                metric = scoring_metric,
+                threshold = scoring_threshold,
+                metric_parameters = scoring_parameters,
+            )
+
+            # Add Malicious clients
+            for _ in range(int(client_count * malicious_percentage / 100)):
+                server.register_client(
+                    MaliciousClient(
+                        client_id = _+1,
+                        model = NormalMLP(),
+                        local_epochs = client_epochs,
+                        batch_size = client_batch_size,
+                        learning_rate = client_lr,
+                        attack_rate = 1
+                    )
+                )
+
+            while _ < client_count:
+                server.register_client(
+                    Client(
+                        client_id = _+1,
+                        model = NormalMLP(),
+                        local_epochs = client_epochs,
+                        batch_size = client_batch_size,
+                        learning_rate = client_lr,
+                    )
+                )
+
+            server.run(client_fraction = client_fraction)
+
+            server.run_test(dataset_index = 5, days_count = 5)
+            server.save_metrics(f'{save_filename}_{run}')
+        return
 
     # Simulate defenses
     @staticmethod
