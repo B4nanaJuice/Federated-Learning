@@ -1,5 +1,6 @@
 # Imports
 import copy
+import math
 import torch
 import numpy as np
 from time import time
@@ -38,7 +39,7 @@ class ScoringEntity:
         self.threshold: float = threshold
         self.saved_model: Dict[str, torch.Tensor] = None
         self.metric_parameters: Dict[str, any] = metric_parameters or {}
-        self.rejected_models: int = 0
+        self.rejected_models: List[int] = []
         
         # Validation dataset
         self._tensor: torch.Tensor = torch.load(f'app/scoring/validation_dataset.pt')

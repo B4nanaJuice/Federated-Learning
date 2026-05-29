@@ -28,6 +28,7 @@ class ScoringServer(Server, ScoringEntity):
         super().collect_updates(threaded = threaded)
 
         kept_updates: List[Dict] = []
+        rejected: int = 0
 
         for update in self.received_updates:
             client_id = update.get('client_id')
@@ -37,10 +38,11 @@ class ScoringServer(Server, ScoringEntity):
 
             if self.scores.get(client_id) < self.threshold:
                 logger.info(f'Client {client_id} has a score too low ({self.scores.get(client_id)} < {self.threshold})')
-                self.rejected_models += 1
+                rejected += 1
             else:
                 kept_updates.append(update)
-
+        
+        self.rejected_models.append(rejected)
         self.received_updates = copy.deepcopy(kept_updates)
         logger.info(f'Scores: {self.scores}')
         return
