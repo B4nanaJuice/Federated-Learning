@@ -37,7 +37,7 @@ class ScoringEntity:
         logger.debug(f'Scoring metric is {self.metric}')
         self.threshold: float = threshold
         self.saved_model: Dict[str, torch.Tensor] = None
-        self.metric_parameters: Dict[str, any] = metric_parameters
+        self.metric_parameters: Dict[str, any] = metric_parameters or {}
         self.rejected_models: int = 0
         
         # Validation dataset
