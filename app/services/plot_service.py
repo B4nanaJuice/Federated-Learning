@@ -24,6 +24,36 @@ class PlotService:
         PlotService._plot_loss(dfs = dfs, files = files)
         return
 
+    # Plot different sigma for scoring comparison
+    @staticmethod
+    def plot_sigma_measurment(files: List[str] = None) -> None:
+
+        files: List[str] = files or ['distance', 'dataset']
+        ticks: set = set([])
+
+        # fig, axs = plt.subplots(2, 1)
+        for file in files:
+            
+            with open(f'save/sigma_testing/{file}.json', mode = 'r', encoding = 'utf-8') as f:
+                _data = json.load(fp = f)
+
+            plt.plot(_data['parameters'], _data['rejected'], label = f'{file.capitalize()} scoring')
+            ticks = ticks | set(_data['parameters'])
+
+        plt.hlines(.1, min(ticks), max(ticks), linestyles = '--', label = 'Threshold', color = '#aaaaaa')
+
+        plt.xlabel('$\\sigma$')
+        plt.ylabel('Rejected models')
+        plt.title(f'Number of rejected models for different scoring methods')
+        plt.grid(axis = 'y')
+        plt.xscale('log')
+        plt.xticks(sorted(ticks))
+        plt.legend()
+
+        plt.show()
+        return
+        
+
     ### Utils methods
     # Generate dataframe for metric
     @staticmethod
