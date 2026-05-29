@@ -192,10 +192,11 @@ class SimulationService:
             )
 
             # Add Malicious clients
-            for _ in range(int(client_count * malicious_percentage / 100)):
+            _ = 1
+            while _ <= int(client_count * malicious_percentage / 100):
                 server.register_client(
                     MaliciousClient(
-                        client_id = _+1,
+                        client_id = _,
                         model = NormalMLP(),
                         local_epochs = client_epochs,
                         batch_size = client_batch_size,
@@ -203,17 +204,19 @@ class SimulationService:
                         attack_rate = 1
                     )
                 )
+                _ += 1
 
-            while _ < client_count:
+            while _ <= client_count:
                 server.register_client(
                     Client(
-                        client_id = _+1,
+                        client_id = _,
                         model = NormalMLP(),
                         local_epochs = client_epochs,
                         batch_size = client_batch_size,
                         learning_rate = client_lr,
                     )
                 )
+                _ += 1
 
             server.run(client_fraction = client_fraction)
 
