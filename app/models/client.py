@@ -20,7 +20,7 @@ class Client:
                  local_epochs: int = 5, 
                  batch_size: int = 32,
                  learning_rate: float = 0.001,
-                 iid: bool = False,
+                 iid: bool = True,
                  **kwargs
                  ):
         
