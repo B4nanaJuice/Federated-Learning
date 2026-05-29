@@ -19,7 +19,7 @@ class MaliciousClient(Client, MaliciousEntity):
         
         if self.attack_target == 'model' and self.can_attack():
             self.model.load_state_dict(self.poison_model(self.model, self.attack_method, self.partial_attack))
-            self.attacked_rounds.append(self.round_id)
+            self.attacked_rounds.append(self.current_round)
         
         # return super(Client, self).send_update()
         return super().send_update()

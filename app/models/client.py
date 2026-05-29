@@ -26,7 +26,7 @@ class Client:
         
         # Identity
         self.client_id: int = client_id
-        self.round_id: int = 0
+        self.current_round: int = 0
 
         # Local data
         self._train_tensor: torch.Tensor = torch.load(f'data/processed/train/{"iid" if iid else "noniid"}/building_{client_id}.pt')
@@ -62,7 +62,7 @@ class Client:
             global_weights (Dict[int, torch.Tensor]): The global model weights received from the server.
         """
         self.model.load_state_dict(copy.deepcopy(global_weights))
-        self.round_id = round_id
+        self.current_round = round_id
         return
     
     def train_local(self) -> None:

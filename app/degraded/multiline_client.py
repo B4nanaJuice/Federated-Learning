@@ -59,7 +59,7 @@ class MultilineClient(ScoringClient):
             # Switch to offline mode
             self.model.load_state_dict(self.saved_model)
 
-        self.round_id = round_id
+        self.current_round = round_id
         return
     
 def check_multiline_client():

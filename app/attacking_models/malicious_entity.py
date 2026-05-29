@@ -51,7 +51,7 @@ class MaliciousEntity:
         return model
             
     def can_attack(self) -> bool:
-        round_value = getattr(self, 'round_id', getattr(self, 'current_round', None))
+        round_value = getattr(self, 'current_round', None)
 
         if callable(self.attack_rate) and round_value is not None:
             return self.attack_rate(round_value)
