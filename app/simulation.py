@@ -89,49 +89,4 @@ def multi_run(**options):
         server.run(client_fraction = client_fraction)
         server.run_test()
         server.save_metrics(f'{save_filename}_{run}')
-
-# Method for data grouping
-def data_grouping(**options) -> Dict[str, any]:
-
-    save_filename: str = options.get('save-filename', 'run').replace(' ', '_')
-    logger.info(f'Beginning data grouping for files {save_filename}.')
-
-    run_count: int = len(glob(f'{config.SAVE_DATA_PATH}/{save_filename}*'))
-    logger.info(f'Found {run_count} files.')
-    
-    metrics_name: List[str] = ['MAE', 'MSE', 'RMSE']
-    columns: List[str] = ['load', 'pv', 'net']
-
-    output_data: Dict[str, any] = {
-        'training_loss': None,
-        'MAE': {k: [] for k in ['load', 'pv', 'net']},
-        'MSE': {k: [] for k in ['load', 'pv', 'net']},
-        'RMSE': {k: [] for k in ['load', 'pv', 'net']}
-    }
-
-    for _ in range(run_count):
-        with open(f'{config.SAVE_DATA_PATH}/{save_filename}_{_}.json', mode = 'r', encoding = 'utf-8') as f:
-            data: Dict = json.load(fp = f)
-
-        # Append training loss
-        # Output list of list is a matrix with run_count rows and rounds columns
-        if not output_data['training_loss']:
-            output_data['training_loss'] = [np.array(data['training_loss']).mean(axis = 1)]
-        else:
-            output_data['training_loss'] = np.append(output_data['training_loss'], [np.array(data['training_loss']).mean(axis = 1)], axis = 0).tolist()
-
-        # Append each metric for each column
-        for _m in metrics_name:
-            for _c in columns:
-                output_data[_m][_c].append(data[_m][_c])
-
-    # Check if the output data can be written in the file (create a new directory if needed)
-    if not os.path.exists(f'{config.SAVE_DATA_PATH}/grouping'):
-        logger.info(f'Grouping directory not found. Creating one.')
-        os.makedirs(f'{config.SAVE_DATA_PATH}/grouping')
-    with open(f'{config.SAVE_DATA_PATH}/grouping/{save_filename}.json', mode = 'w', encoding = 'utf-8') as f:
-        f.write(json.dumps(output_data, indent = 4))
-
-    logger.info(f'Data grouping for {save_filename} ended successfully !')
-    return output_data
     
