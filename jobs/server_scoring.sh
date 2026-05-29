@@ -25,7 +25,7 @@ for scoring in "distance" "dataset" "distribution" "similarity"; do
 
         echo '' >> jobs/scoring/$scoring.$malicious.sh;
 
-        echo "python /gpfs/home/griesmax/Federated-Learning/run.py server-scoring --save-filename $scoring --malicious $malicious --metric $scoring" >> jobs/scoring/$scoring.$malicious.sh;
+        echo "python /gpfs/home/griesmax/Federated-Learning/run.py server-scoring --save-filename \"$scoring $malicious\" --malicious $malicious --metric $scoring" >> jobs/scoring/$scoring.$malicious.sh;
 
         sbatch jobs/scoring/$scoring.$malicious.sh;
     done
