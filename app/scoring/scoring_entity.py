@@ -74,8 +74,8 @@ class ScoringEntity:
             logger.info(f'Taking bins from parameters: {self.metric_parameters["bins"]}')
             bins = self.metric_parameters['bins']
         
-        w_a: torch.Tensor = torch.cat([p.data.flatten() for p in model.values()])
-        w_b: torch.Tensor = torch.cat([p.data.flatten() for p in self.saved_model.values()])
+        w_a: torch.Tensor = torch.cat([p.data.flatten().cpu() for p in model.values()])
+        w_b: torch.Tensor = torch.cat([p.data.flatten().cpu() for p in self.saved_model.values()])
 
         _range: Tuple[float, float] = (
             min(w_a.min().item(), w_b.min().item()),
@@ -108,8 +108,8 @@ class ScoringEntity:
 
     def get_similarity(self, model: Dict[str, torch.Tensor]) -> float:
         
-        w_a: torch.Tensor = torch.cat([p.data.flatten() for p in model.values()])
-        w_b: torch.Tensor = torch.cat([p.data.flatten() for p in self.saved_model.values()])
+        w_a: torch.Tensor = torch.cat([p.data.flatten().cpu() for p in model.values()])
+        w_b: torch.Tensor = torch.cat([p.data.flatten().cpu() for p in self.saved_model.values()])
 
         _cos: float = F.cosine_similarity(w_a.unsqueeze(0), w_b.unsqueeze(0)).item()
         cosine: float = min(1, max(0, (_cos + 1) / 2))
