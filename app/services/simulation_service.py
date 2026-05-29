@@ -27,7 +27,12 @@ class SimulationService:
         server_max_rounds: int = 10
 
         ## Scoring parameters
-        scoring_metric: ScoringMetric = ScoringMetric[options.get('metric', 'distance').upper()]
+        scoring_metric: ScoringMetric = {
+            'dataset': ScoringMetric.DATASET,
+            'distance': ScoringMetric.DISTANCE,
+            'distribution': ScoringMetric.DISTRIBUTION,
+            'similarity': ScoringMetric.SIMILARITY
+        }.get(options.get('metric', 'distance'))
         scoring_threshold: float = .4
         scoring_sigmas: List[float] = np.linspace(0.01, 1, 21).tolist()
 
