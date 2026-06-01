@@ -17,6 +17,8 @@ spack load py-pip ^python@3.11.9
 mkdir -p output
 source /gpfs/home/griesmax/Federated-Learning/venv/bin/activate
 
-for file in "5%_clients_model" "20%_clients_model" "clean_run" "clients_gradient_amplification" "clients_gradient_inversion"; do
-    python /gpfs/home/griesmax/Federated-Learning/run.py group-data --save-filename "$file"
+for scoring in "distribution" "distance" "dataset" "similarity"; do
+    for percentage in {0..100..5}; do
+        python /gpfs/home/griesmax/Federated-Learning/run.py group-data --save-filename "$scoring $percentage"
+    done
 done
