@@ -146,7 +146,7 @@ class SimulationService:
             server.run(client_fraction = client_fraction)
 
             server.run_test(dataset_index = 5, days_count = 5)
-            server.save_metrics(f'{save_filename}_{run}')
+            server.save_metrics(f'{save_filename}_{"partial" if attack_partial else "total"}_{run}')
         return
     
     # Simulate server scoring
@@ -233,11 +233,14 @@ class SimulationService:
     @staticmethod
     def group_data(**options) -> Dict[str, any]:
 
-        save_filename: str = options.get('save-filename', 'run').replace(' ', '_')
+        save_filename: str = options.get('save-filename', 'run')
         logger.info(f'Beginning data grouping for files {save_filename}.')
 
         run_count: int = len(glob(f'{config.SAVE_DATA_PATH}/{save_filename}*'))
         logger.info(f'Found {run_count} files.')
+        if run_count == 0:
+            logger.warning('0 files are found. Aborting.')
+            return
         
         metrics_name: List[str] = ['MAE', 'MSE', 'RMSE']
         columns: List[str] = ['load', 'pv', 'net']
