@@ -118,7 +118,7 @@ class SimulationService:
         client_epochs: int = 15
         client_batch_size: int = 128
         client_lr: float = 1e-3
-        client_fraction: float = .7
+        client_fraction: float = .5
 
         # Simulation results
         rejected: List[List[int]] = []
