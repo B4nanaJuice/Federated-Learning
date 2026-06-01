@@ -72,7 +72,7 @@ class SimulationService:
             
             server.run(client_fraction = client_fraction)
 
-            rejected.append(server.rejected_models)
+            rejected.append(sum(server.rejected_models))
             logger.info(f'Rejected models for sigma : {sigma} = {server.rejected_models}')
 
         logger.info(f'rejected models: {rejected}')
@@ -83,6 +83,83 @@ class SimulationService:
             f.write(json.dumps(
                 {
                     'parameters': scoring_sigmas,
+                    'rejected': rejected
+                },
+                indent = 4
+            ))
+        return
+
+    # Scoring simulations for computing best sigma decay factor
+    @staticmethod
+    def sigma_decay_measurment(*args, **options) -> None:
+        
+        # Simulation parameters from options
+        ## Overall parameters
+        save_filename: str = options.get('save-filename', 'scoring')
+
+        ## Server parameters
+        server_max_rounds: int = 10
+
+        ## Scoring parameters
+        scoring_metric: ScoringMetric = {
+            'dataset': ScoringMetric.DATASET,
+            'distance': ScoringMetric.DISTANCE
+        }.get(options.get('metric', 'distance'))
+        scoring_threshold: float = .4
+        scoring_sigma: float = {
+            'distance': 7,
+            'dataset': .3
+        }.get(options.get('metric'))
+        scoring_decays: List[float] = list(range(2, 12))
+        scoring_decay_type: str = options.get('decay', 'root') # log or root
+
+        ## Client parameters
+        client_count: int = 10
+        client_epochs: int = 15
+        client_batch_size: int = 128
+        client_lr: float = 1e-3
+        client_fraction: float = .5
+
+        # Simulation results
+        rejected: List[List[int]] = []
+
+        # Simulation
+        for decay_factor in scoring_decays:
+
+            logger.info(f'Starting simulation for decay = {decay_factor}')
+                
+            server: ScoringServer = ScoringServer(
+                global_model = NormalMLP(),
+                max_rounds = server_max_rounds,
+                metric = scoring_metric,
+                threshold = scoring_threshold,
+                metric_parameters = {'sigma': scoring_sigma, 'decay': decay_factor, 'decay_type': scoring_decay_type}
+            )
+
+            for _ in range(client_count):
+                server.register_client(
+                    Client(
+                        client_id = _+1,
+                        model = NormalMLP(),
+                        local_epochs = client_epochs,
+                        batch_size = client_batch_size,
+                        learning_rate = client_lr
+                    )
+                )
+            
+            server.run(client_fraction = client_fraction)
+
+            rejected.append(server.rejected_models)
+            logger.info(f'Rejected models for decay : {decay_factor} = {sum(server.rejected_models)}')
+
+        logger.info(f'rejected models: {rejected}')
+        logger.info('Saving data to file...')
+
+        # Save data to file
+        with open(f'{config.SAVE_DATA_PATH}/sigma_testing/decay_{scoring_decay_type}_{save_filename}.json', mode = 'w', encoding = 'utf-8') as f:
+            f.write(json.dumps(
+                {
+                    'parameters': scoring_decays,
                     'rejected': rejected
                 },
                 indent = 4
