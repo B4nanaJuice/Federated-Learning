@@ -105,6 +105,13 @@ class ScoringEntity:
             dist += (p_a.data.cpu() - p_b.data.cpu()).pow(2).sum()
         dist: float = dist.sqrt().item()
 
+        if 'decay' in self.metric_parameters and 'decay_type' in self.metric_parameters:
+            decay: Callable = {
+                'log': lambda x: math.log(x, self.metric_parameters['decay']) / sigma,
+                'root': lambda x: x^(1/self.metric_parameters['decay']) / sigma
+            }.get(self.metric_parameters['decay_type'])
+            return math.exp(-dist * decay(getattr(self, 'current_round') + 1))
+        
         return torch.exp(torch.tensor(-dist / sigma)).item()
 
     def get_similarity(self, model: Dict[str, torch.Tensor]) -> float:
@@ -137,7 +144,14 @@ class ScoringEntity:
             predictions: torch.Tensor = _model(x_val)
             mae: float = mean_absolute_error(y_val[:, 1].tolist(), predictions[:, 1].tolist())
 
-            return np.exp(-mae / sigma)
+            if 'decay' in self.metric_parameters and 'decay_type' in self.metric_parameters:
+                decay: Callable = {
+                    'log': lambda x: math.log(x, self.metric_parameters['decay']) / sigma,
+                    'root': lambda x: x^(1/self.metric_parameters['decay']) / sigma
+                }.get(self.metric_parameters['decay_type'])
+                return math.exp(-mae * decay(getattr(self, 'current_round') + 1))
+            
+            return math.exp(-mae / sigma)
 
 def evaluate_poisonous_model_scoring():
     # Parameters
