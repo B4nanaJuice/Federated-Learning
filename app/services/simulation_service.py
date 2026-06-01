@@ -236,7 +236,7 @@ class SimulationService:
         save_filename: str = options.get('save-filename', 'run')
         logger.info(f'Beginning data grouping for files {save_filename}.')
 
-        run_count: int = len(glob(f'{config.SAVE_DATA_PATH}/{save_filename}*'))
+        run_count: int = len(glob(f'{config.SAVE_DATA_PATH}/{save_filename}_*'))
         logger.info(f'Found {run_count} files.')
         if run_count == 0:
             logger.warning('0 files are found. Aborting.')
