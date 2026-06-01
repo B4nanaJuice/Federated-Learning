@@ -108,7 +108,7 @@ class ScoringEntity:
         if 'decay' in self.metric_parameters and 'decay_type' in self.metric_parameters:
             decay: Callable = {
                 'log': lambda x: math.log(x, self.metric_parameters['decay']) / sigma,
-                'root': lambda x: x^(1/self.metric_parameters['decay']) / sigma
+                'root': lambda x: x**(1/self.metric_parameters['decay']) / sigma
             }.get(self.metric_parameters['decay_type'])
             return math.exp(-dist * decay(getattr(self, 'current_round') + 1))
         
@@ -147,7 +147,7 @@ class ScoringEntity:
             if 'decay' in self.metric_parameters and 'decay_type' in self.metric_parameters:
                 decay: Callable = {
                     'log': lambda x: math.log(x, self.metric_parameters['decay']) / sigma,
-                    'root': lambda x: x^(1/self.metric_parameters['decay']) / sigma
+                    'root': lambda x: x**(1/self.metric_parameters['decay']) / sigma
                 }.get(self.metric_parameters['decay_type'])
                 return math.exp(-mae * decay(getattr(self, 'current_round') + 1))
             
