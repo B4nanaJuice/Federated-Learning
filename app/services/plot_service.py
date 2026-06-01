@@ -53,6 +53,33 @@ class PlotService:
         plt.show()
         return
         
+    # Plot effect of different decays for the sigma
+    @staticmethod
+    def plot_decay_measurment(files: List[str] = None) -> None:
+        
+        files: List[str] = files or ['log_distance', 'log_dataset', 'root_distance', 'root_dataset']
+        ticks: set = set([])
+
+        fig, axs = plt.subplots(2, 2)
+        for file_idx, file in enumerate(files):
+            
+            with open(f'save/sigma_testing/decay_{file}.json', mode = 'r', encoding = 'utf-8') as f:
+                _data = json.load(fp = f)
+
+            ax = axs[file_idx%2, file_idx//2]
+
+            for idx, param in enumerate(_data['parameters']):
+                ax.plot(range(1, len(_data['rejected'][idx]) + 1), _data['rejected'][idx], label = f'$\\alpha = {param}$')
+            ticks = ticks | set(_data['parameters'])
+            ax.set_title(f'{file.split("_")[1]} scoring with {file.split("_")[0]} decay')
+            ax.legend(loc = 'upper left')
+            ax.set_xticks(range(1, len(_data['rejected'][idx]) + 1))
+            ax.set_ylabel('Number of rejected models')
+            ax.set_xlabel('Round')
+
+        fig.suptitle('Comparison of rejected models for distance and dataset scoring with different decays')
+        plt.subplots_adjust(hspace = .4)
+        plt.show()
 
     ### Utils methods
     # Generate dataframe for metric
