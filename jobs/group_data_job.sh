@@ -18,7 +18,7 @@ mkdir -p output
 source /gpfs/home/griesmax/Federated-Learning/venv/bin/activate
 
 for scoring in "distribution" "distance" "dataset" "similarity"; do
-    for partial in "true" "false"; do
+    for partial in "partial" "total"; do
         python /gpfs/home/griesmax/Federated-Learning/run.py group-data --save-filename "$scoring $partial"
     done
 done
