@@ -146,7 +146,7 @@ class SimulationService:
             server.run(client_fraction = client_fraction)
 
             server.run_test(dataset_index = 5, days_count = 5)
-            server.save_metrics(f'{save_filename}_{"partial" if attack_partial else "total"}_{run}')
+            server.save_metrics(f'{save_filename} {"partial" if attack_partial else "total"}_{run}')
         return
     
     # Simulate server scoring
