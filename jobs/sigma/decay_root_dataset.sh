@@ -6,7 +6,7 @@
 #SBATCH --nodes=2
 #SBATCH --cpus-per-task=1
 #SBATCH --gpus-per-node=1
-#SBATCH --job-name "log dist"
+#SBATCH --job-name "root data"
 #SBATCH --error=output/job.%J.err
 #SBATCH --output=output/job.%J.out
 
