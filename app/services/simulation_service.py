@@ -98,7 +98,7 @@ class SimulationService:
         save_filename: str = options.get('save-filename', 'scoring')
 
         ## Server parameters
-        server_max_rounds: int = 10
+        server_max_rounds: int = 20
 
         ## Scoring parameters
         scoring_metric: ScoringMetric = {
@@ -110,7 +110,7 @@ class SimulationService:
             'distance': 7,
             'dataset': .3
         }.get(options.get('metric'))
-        scoring_decays: List[float] = list(range(2, 12))
+        scoring_decays: List[float] = list(range(2, 27))
         scoring_decay_type: str = options.get('decay', 'root') # log or root
 
         ## Client parameters
@@ -118,7 +118,7 @@ class SimulationService:
         client_epochs: int = 15
         client_batch_size: int = 128
         client_lr: float = 1e-3
-        client_fraction: float = .5
+        client_fraction: float = .7
 
         # Simulation results
         rejected: List[List[int]] = []
