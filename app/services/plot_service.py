@@ -72,7 +72,7 @@ class PlotService:
                 ax.plot(range(1, len(_data['rejected'][idx]) + 1), _data['rejected'][idx], label = f'$\\alpha = {param}$')
             ticks = ticks | set(_data['parameters'])
             ax.set_title(f'{file.split("_")[1]} scoring with {file.split("_")[0]} decay')
-            ax.legend(loc = 'upper left')
+            ax.legend(loc = 0)
             ax.set_xticks(range(1, len(_data['rejected'][idx]) + 1))
             ax.set_ylabel('Number of rejected models')
             ax.set_xlabel('Round')
