@@ -43,21 +43,52 @@ class Server:
         self.test_predictions: Dict[str, List[float]] = {}
 
     def register_client(self, client: Client) -> None:
+        """
+        Add a client to the server's client registry.
+
+        Args:
+            client (Client): The client to add to the registry.
+        """
         self.client_registry[client.client_id] = client
         return
     
     def register_clients(self, clients: List[Client]) -> None:
+        """
+        Add multiple clients to the server's client registry.
+
+        Args:
+            clients (List[Client]): A list containing the clients that will be added to the registry.
+        """
         for _client in clients:
             self.register_client(_client)
         return
 
     def select_clients(self, fraction: float = 1.0) -> List[Client]:
+        """
+        Select clients that will train their local model on the current round.
+
+        Args:
+            fraction (float): The percentage of clients that will participate in the current round.
+
+        Returns:
+            List[Client]: A list containing the selected clients.
+        """
         import random as rd
         k = int(len(self.client_registry) * fraction)
         self.selected_clients = rd.sample(list(self.client_registry.values()), k)
         return self.selected_clients
     
     def broadcast(self, round: int, threaded: bool = config.SIM_THREADED) -> Dict[str, torch.Tensor]:
+        """
+        Broadcast the model to selected clients.
+
+        Args:
+            round (int): The current round.
+            threaded (bool = config.SIM_THREADED): Broadcast the model in parallel or on a signle thread.
+
+        Returns:
+            Dict[str, torch.Tensor]: The broadcasted model's weights.
+        """
 
         self.broadcast_model = copy.deepcopy(self.global_model.state_dict())
         if threaded:
@@ -74,6 +105,13 @@ class Server:
         return self.broadcast_model
     
     def collect_updates(self, threaded: bool = config.SIM_THREADED) -> None:
+        """
+        Tell clients to train their local model and collect update of each client 
+        participating in the current round.
+
+        Args:
+            threaded (bool = config.SIM_THREADED): Train the clients on different threads or on a single one.
+        """
         self.received_updates = []
 
         if threaded:
@@ -96,6 +134,9 @@ class Server:
         self.training_loss.append(training_loss)
 
     def aggregate(self) -> None:
+        """
+        Aggregate all the received updates into one model. The default aggregation method is FedAvg.
+        """
 
         new_state = AggregationService.fed_avg(self.received_updates)
         self.global_model.load_state_dict(new_state)
@@ -104,6 +145,12 @@ class Server:
         return
 
     def run(self, client_fraction: float = 1.0) -> None:
+        """
+        Run the simulation. For each round, broadcast the model, collect updates and aggregate.
+
+        Args:
+            client_fraction (float = 1.0): The fraction of clients that will participate in each round.
+        """
         for round in tqdm(range(1, self.max_rounds + 1), desc = 'Round'):
             self.select_clients(client_fraction)
             self.broadcast(round = round)
@@ -113,6 +160,13 @@ class Server:
         return
     
     def run_test(self, dataset_index: int = 1, days_count: int = 10) -> None:
+        """
+        Evaluate the model with the test dataset.
+
+        Args:
+            dataset_index (int = 1): Index of the used dataset for testing the global model.
+            days_count (int = 10): Number of days the model will predict the electric consumption.
+        """
 
         self.global_model = self.global_model.to(device = config.DEVICE)
         self.global_model.eval()
@@ -143,6 +197,12 @@ class Server:
         return
 
     def save_metrics(self, filename: str) -> Dict[str, any]:
+        """
+        Save the metrics to a given filename, in JSON format.
+        
+        Args:
+            filename (str): The name of the file the metrics will be saved under.
+        """
         # Convert attributes to dict
         metrics: Dict[str, any] = {
             'training_loss': self.training_loss,

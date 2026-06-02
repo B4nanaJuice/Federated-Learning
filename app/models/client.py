@@ -60,12 +60,16 @@ class Client:
         
         Args:
             global_weights (Dict[int, torch.Tensor]): The global model weights received from the server.
+            round_id (int): The id of the began round.
         """
         self.model.load_state_dict(copy.deepcopy(global_weights))
         self.current_round = round_id
         return
     
     def train_local(self) -> None:
+        """
+        Train the client's local model based on the locla dataset.
+        """
         t0: float = time.time()
 
         early_stopper: EarlyStopper = EarlyStopper(patience = 5, min_delta = 1e-3)
@@ -120,12 +124,28 @@ class Client:
         return
 
     def get_batch(self, batch: int) -> tuple[torch.Tensor, torch.Tensor]:
+        """
+        Retrieve a batch used for training the local model.
+
+        Args:
+            batch (int): The index of the wanted batch
+
+        Returns:
+            tuple[torch.Tensor, torch.Tensor]: The features and the targets of the batch
+        """
         start_idx: int = batch * self.batch_size
         end_idx: int = min((batch + 1) * self.batch_size, len(self.train_dataset))
         x_batch, y_batch = self.train_dataset[start_idx:end_idx]
         return x_batch, y_batch
 
     def send_update(self) -> Dict:
+        """
+        Send client's local model to the aggregation server.
+
+        Returns:
+            Dict: A dictionary containing the client's id, the weights of the local model after the 
+            training and the loss computed during the training phase.
+        """
         return {
             'client_id': self.client_id,
             'weights': copy.deepcopy(self.model.state_dict()),
