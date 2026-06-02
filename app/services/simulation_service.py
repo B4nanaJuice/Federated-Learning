@@ -301,6 +301,173 @@ class SimulationService:
             server.save_metrics(f'{save_filename}_{run}')
         return
 
+    # Simulate decay for client scoring
+    @staticmethod
+    def simulate_client_decay_scoring(*args, **options) -> None:
+        
+        # Simulation parameters from options
+        ## Overall parameters
+        run_count: int = 10
+        save_filename: str = options.get('save-filename', 'scoring')
+
+        ## Attack parameters
+        attack_partial: bool = options.get('partial', 'false').lower() == 'true'
+
+        ## Scoring parameters
+        scoring_metric: ScoringMetric = ScoringMetric[options.get('metric', 'distance').upper()]
+        scoring_threshold: float = .4
+        scoring_sigma: float = {
+            ScoringMetric.DISTANCE: 6.8,
+            ScoringMetric.DATASET: .3
+        }.get(scoring_metric)
+        scoring_decay_type: str = options.get('decay', 'root').lower()
+        scoring_decay: float = {
+            'distance': {
+                'log': 22
+            }, 'dataset': {
+                'log': 4,
+                'root': 4
+            }
+        }.get(options.get('metric', 'distance')).get(scoring_decay_type)
+        if scoring_decay is None:
+            return
+        scoring_parameters: Dict[str, any] = {
+            'sigma': scoring_sigma,
+            'decay': scoring_decay,
+            'decay_type': scoring_decay_type
+        }
+
+        ## Server parameters
+        server_max_rounds: int = 20
+
+        ## Client parameters
+        client_count: int = 20
+        client_epochs: int = 15
+        client_batch_size: int = 128
+        client_lr: float = 1e-3
+        client_fraction: float = .5
+
+        for run in range(run_count):
+            
+            # Create Attacked server
+            server: AttackedServer = AttackedServer(
+                global_model = NormalMLP(),
+                max_rounds = server_max_rounds,
+                partial_attack = attack_partial,
+                attack_rate = lambda x: x in [5, 6, 7, 17, 18, 19] if attack_partial else x == 19
+            )
+
+            for _ in range(client_count):
+                server.register_client(
+                    ScoringClient(
+                        client_id = _+1,
+                        model = NormalMLP(),
+                        metric = scoring_metric,
+                        threshold = scoring_threshold,
+                        metric_parameters = scoring_parameters,
+                        local_epochs = client_epochs,
+                        batch_size = client_batch_size,
+                        learning_rate = client_lr
+                    )
+                )
+
+            server.run(client_fraction = client_fraction)
+
+            server.run_test(dataset_index = 5, days_count = 5)
+            server.save_metrics(f'{scoring_decay_type}_{save_filename} {"partial" if attack_partial else "total"}_{run}')
+        return
+
+    # Simulate decay for server scoring
+    @staticmethod
+    def simulate_server_decay_scoring(*args, **options) -> None:
+        
+        # Simulation parameters from options
+        ## Overall parameters
+        run_count: int = 10
+        save_filename: str = options.get('save-filename', 'scoring')
+
+        ## Attack parameters
+        malicious_percentage: float = float(options.get('malicious', 0))
+        assert 0 <= malicious_percentage <= 100
+
+        ## Scoring parameters
+        scoring_metric: ScoringMetric = ScoringMetric[options.get('metric', 'distance').upper()]
+        scoring_threshold: float = .4
+        scoring_sigma: float = {
+            ScoringMetric.DISTANCE: 6.8,
+            ScoringMetric.DATASET: .3
+        }.get(scoring_metric)
+        scoring_decay_type: str = options.get('decay', 'root').lower()
+        scoring_decay: float = {
+            'distance': {
+                'log': 22
+            }, 'dataset': {
+                'log': 4,
+                'root': 4
+            }
+        }.get(options.get('metric', 'distance')).get(scoring_decay_type)
+        if scoring_decay is None:
+            return
+        scoring_parameters: Dict[str, any] = {
+            'sigma': scoring_sigma,
+            'decay': scoring_decay,
+            'decay_type': scoring_decay_type
+        }
+
+        ## Server parameters
+        server_max_rounds: int = 20
+
+        ## Client parameters
+        client_count: int = 20
+        client_epochs: int = 15
+        client_batch_size: int = 128
+        client_lr: float = 1e-3
+        client_fraction: float = .5
+
+        for run in range(run_count):
+            
+            # Create Scoring server
+            server: ScoringServer = ScoringServer(
+                global_model = NormalMLP(),
+                max_rounds = server_max_rounds,
+                metric = scoring_metric,
+                threshold = scoring_threshold,
+                metric_parameters = scoring_parameters,
+            )
+
+            # Add Malicious clients
+            _ = 1
+            while _ <= int(client_count * malicious_percentage / 100):
+                server.register_client(
+                    MaliciousClient(
+                        client_id = _,
+                        model = NormalMLP(),
+                        local_epochs = client_epochs,
+                        batch_size = client_batch_size,
+                        learning_rate = client_lr,
+                        attack_rate = 1
+                    )
+                )
+                _ += 1
+
+            while _ <= client_count:
+                server.register_client(
+                    Client(
+                        client_id = _,
+                        model = NormalMLP(),
+                        local_epochs = client_epochs,
+                        batch_size = client_batch_size,
+                        learning_rate = client_lr,
+                    )
+                )
+                _ += 1
+
+            server.run(client_fraction = client_fraction)
+
+            server.run_test(dataset_index = 5, days_count = 5)
+            server.save_metrics(f'{scoring_decay_type}_{save_filename}_{run}')
+        return
+
     # Simulate defenses
     @staticmethod
     def simulate_defense(*args, **options) -> None:

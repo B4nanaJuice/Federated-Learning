@@ -42,6 +42,18 @@ def cmd_run_client_scoring(args: list[str]) -> None:
     from app.services import SimulationService
     SimulationService.simulate_client_scoring(**options)
 
+def cmd_run_client_decay_scoring(args: list[str]) -> None:
+    logger.info('Running client scoring simulation')
+    options = parse_named_options(args)
+    from app.services import SimulationService
+    SimulationService.simulate_client_decay_scoring(**options)
+
+def cmd_run_server_decay_scoring(args: list[str]) -> None:
+    logger.info('Running client scoring simulation')
+    options = parse_named_options(args)
+    from app.services import SimulationService
+    SimulationService.simulate_server_decay_scoring(**options)
+
 def cmd_run_decay(args: list[str]) -> None:
     logger.info('Running decay measurment')
     options = parse_named_options(args)
@@ -73,6 +85,8 @@ if __name__ == "__main__":
         case 'client-scoring':  cmd_run_client_scoring(extra_args)
         case 'server-scoring':  cmd_run_server_scoring(extra_args)
         case 'run-decay':       cmd_run_decay(extra_args)
+        case 'client-decay':    cmd_run_client_decay_scoring(extra_args)
+        case 'server-decay':    cmd_run_server_decay_scoring(extra_args)
         case 'run-defenses':    cmd_run_defenses_simulation(extra_args)
         case 'group-data':      cmd_group_data(extra_args)
         case _:
