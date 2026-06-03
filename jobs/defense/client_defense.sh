@@ -3,7 +3,7 @@
 mkdir -p jobs/defense
 
 for partial in "true" "false"; do
-    for defense in "tmean" "rfa" "fltrust"; do
+    for defense in "fedavg" "krum" "mkrum" "norm" "cbaa" "tmean" "rfa" "fltrust" "clra"; do
         
         echo '#!/usr/bin/env bash' > jobs/defense/$defense.$partial.sh;
         echo '#SBATCH --account="r260042"' >> jobs/defense/$defense.$partial.sh;
@@ -25,7 +25,7 @@ for partial in "true" "false"; do
 
         echo '' >> jobs/defense/$defense.$partial.sh;
 
-        echo "python /gpfs/home/griesmax/Federated-Learning/run.py run-defenses --defense $defense --partial $partial" >> jobs/defense/$defense.$partial.sh;
+        echo "python /gpfs/home/griesmax/Federated-Learning/run.py client-defense --defense $defense --partial $partial" >> jobs/defense/$defense.$partial.sh;
 
         sbatch jobs/defense/$defense.$partial.sh;
     done
