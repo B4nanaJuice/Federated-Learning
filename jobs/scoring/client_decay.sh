@@ -26,7 +26,7 @@ for scoring in "distance" "dataset"; do
 
             echo '' >> jobs/scoring/$scoring.$partial.$decay.sh;
 
-            echo "python /gpfs/home/griesmax/Federated-Learning/run.py client-scoring --save-filename $scoring --partial $partial --metric $scoring --decay $decay" >> jobs/scoring/$scoring.$partial.$decay.sh;
+            echo "python /gpfs/home/griesmax/Federated-Learning/run.py client-decay --save-filename $scoring --partial $partial --metric $scoring --decay $decay" >> jobs/scoring/$scoring.$partial.$decay.sh;
 
             sbatch jobs/scoring/$scoring.$partial.$decay.sh;
         done
