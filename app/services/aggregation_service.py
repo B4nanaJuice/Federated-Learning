@@ -425,8 +425,8 @@ class AggregationService:
     # Cosine similarity layerwise
     @staticmethod
     def _cosine_similarity_layer(layer_a: torch.Tensor, layer_b: torch.Tensor) -> float:
-        a_flat = layer_a.flatten().float()
-        b_flat = layer_b.flatten().float()
+        a_flat = layer_a.flatten().float().cpu()
+        b_flat = layer_b.flatten().float().cpu()
     
         # Check for non null norm
         norm_a = torch.norm(a_flat)
