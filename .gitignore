@@ -20,7 +20,8 @@ logs/
 save/
 
 # Temp documentation
-documentation/
+rapport/
+synthèses/
 
 # Validation dataset for metric
 app/scoring/Validation_dataset.pt

@@ -28,7 +28,7 @@ class ScoringClient(Client, ScoringEntity):
         else:
             self.model.load_state_dict(copy.deepcopy(global_weights))
 
-        self.round_id = round_id
+        self.current_round = round_id
         return
     
     def send_update(self) -> Dict:

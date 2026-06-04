@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #SBATCH --account="r260042"
-#SBATCH --time=10:00:00
+#SBATCH --time=6:00:00
 #SBATCH --mem=16G
 #SBATCH --constraint=armgpu
 #SBATCH --nodes=2
@@ -16,15 +16,4 @@ spack load py-pip ^python@3.11.9
 mkdir -p output
 source /gpfs/home/griesmax/Federated-Learning/venv/bin/activate
 
-# Attacker that will poison only last layer of the broadcasted model
-python run.py run-scoring --run-count 3 \
-    --save-filename distance_scoring \
-    --rounds 15 \
-    --server-scoring true \
-    --metric distance \
-    --threshold 0.4 \
-    --sigma 1,2,3,4,4.5,5,5.5,6,8,10 \
-    --client-count 5 \
-    --epochs 15 \
-    --batch 128 \
-    --fraction 1
+python run.py run-scoring --save-filename "dataset" --metric "dataset"

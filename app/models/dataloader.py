@@ -7,6 +7,14 @@ from config import config, create_logger
 logger = create_logger(__name__)
 
 class EnergyDataset(Dataset):
+    """
+    Dataset with electric consumption data.
+
+    Attributes:
+        x (torch.Tensor): The features of the dataset.
+        y (torch.Tensor): The targets of the dataset.
+        lookback (int = config.LOOKBACK): When taking data at time `t`, the number of data sent back from `t-lookback` to `t` (the model will predict the next data based on the `lookback` previous ones.)
+    """
     def __init__(self, features: torch.Tensor, targets: torch.Tensor, lookback: int = config.LOOKBACK):
         self.x = features
         self.y = targets

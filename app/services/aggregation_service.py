@@ -3,6 +3,7 @@ import torch
 import numpy as np
 from typing import List, Dict
 from sklearn.cluster import KMeans
+import torch.nn.functional as F
 
 from config import create_logger
 
@@ -349,3 +350,89 @@ class AggregationService:
             aggregated_weights[key] = weighted_sum
         
         return aggregated_weights
+    
+    # CLRA
+    @staticmethod
+    def clra(updates: List[Dict], reference_model: Dict[str, torch.Tensor], similarity_threshold: float = 0.5, *args, **kwargs) -> Dict[str, torch.Tensor]:
+
+        models: List[Dict[str, torch.Tensor]] = [_.get('weights') for _ in updates]
+        n_clients = len(models)
+        layer_names = list(models[0].keys())
+
+        # Agregation
+        aggregated: Dict[str, torch.Tensor] = {}
+        stats: Dict[str, Dict] = {}
+ 
+        for layer_name in layer_names:
+            ref_layer = reference_model[layer_name].float()
+    
+            similarities: List[float] = []
+            accepted_indices: List[int] = []
+    
+            for client_idx, model in enumerate(models):
+                sim = AggregationService._cosine_similarity_layer(model[layer_name], ref_layer)
+                similarities.append(sim)
+    
+                if sim >= similarity_threshold:
+                    accepted_indices.append(client_idx)
+    
+            stats[layer_name] = {
+                "similarities": similarities,
+                "accepted": accepted_indices,
+                "rejected": [i for i in range(n_clients) if i not in accepted_indices],
+            }
+    
+            if not accepted_indices:
+                # No model passed the filter
+                logger.warning(
+                    f"[{layer_name}] Mo model accepted"
+                    f"(threshold = {similarity_threshold}). "
+                )
+                aggregated[layer_name] = ref_layer.clone()
+                continue
+    
+            accepted_layers = torch.stack(
+                [models[i][layer_name].float() for i in accepted_indices]
+            )  # shape: (n_accepted, *layer_shape)
+    
+            weights = torch.tensor(
+                [similarities[i] for i in accepted_indices],
+                dtype = torch.float32,
+            )
+            # Normalization
+            weights = weights / weights.sum()
+            # Broadcasting : weights shape → (n_accepted, 1, 1, ...)
+            shape = [len(accepted_indices)] + [1] * (accepted_layers.dim() - 1)
+            weights = weights.view(shape)
+            aggregated_layer = (weights * accepted_layers).sum(dim=0)
+    
+    
+            # Back to origin dtype
+            original_dtype = models[0][layer_name].dtype
+            aggregated[layer_name] = aggregated_layer.to(original_dtype)
+    
+            n_accepted = len(accepted_indices)
+            n_rejected = n_clients - n_accepted
+            if n_rejected > 0:
+                logger.info(
+                    f"[{layer_name}] {n_accepted}/{n_clients} accepted models, "
+                    f"{n_rejected} filtered layer(s) "
+                    f"(similarities: {[f'{s:.3f}' for s in similarities]})."
+                )
+    
+        return aggregated
+
+    # Cosine similarity layerwise
+    @staticmethod
+    def _cosine_similarity_layer(layer_a: torch.Tensor, layer_b: torch.Tensor) -> float:
+        a_flat = layer_a.flatten().float().cpu()
+        b_flat = layer_b.flatten().float().cpu()
+    
+        # Check for non null norm
+        norm_a = torch.norm(a_flat)
+        norm_b = torch.norm(b_flat)
+        if norm_a == 0.0 or norm_b == 0.0:
+            return 0.0
+    
+        sim = F.cosine_similarity(a_flat.unsqueeze(0), b_flat.unsqueeze(0)).item()
+        return sim

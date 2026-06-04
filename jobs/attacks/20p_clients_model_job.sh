@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 #SBATCH --account="r260042"
-#SBATCH --time=5:30:00
+#SBATCH --time=6:00:00
 #SBATCH --mem=16G
 #SBATCH --constraint=armgpu
 #SBATCH --nodes=2
 #SBATCH --cpus-per-task=1
 #SBATCH --gpus-per-node=1
-#SBATCH --job-name "20% inversion"
+#SBATCH --job-name "20% model"
 #SBATCH --comment "Clean run with 10 simulations, 20 total clients and 4 malicious clients, 10 clients per round for 20 rounds"
 #SBATCH --error=output/job.%J.err
 #SBATCH --output=output/job.%J.out
@@ -24,6 +24,5 @@ python run.py run-simulation --run-count 10 \
     --malicious-client-count 4 \
     --client-fraction 0.5 \
     --epochs 15 \
-    --save-filename "clients_gradient_inversion" \
-    --client-attack-rate "lambda x: True" \
-    --client-attack-method "gradient-inversion"
+    --save-filename "20%_clients_model" \
+    --client-attack-rate "lambda x: True"

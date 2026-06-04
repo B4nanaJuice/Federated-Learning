@@ -88,6 +88,16 @@ class FLTrustServer(Server):
         self.current_round += 1
         return
     
+# CLRA
+class CLRAServer(Server):
+    def aggregate(self) -> None:
+
+        new_state = AggregationService.clra(self.received_updates, self.broadcast_model)
+        self.global_model.load_state_dict(new_state)
+
+        self.current_round += 1
+        return
+    
 ## ATTACKED SERVERS
 # Weighted_FedAvg
 class AttackedWeightedFedAvgServer(AttackedServer):
@@ -165,6 +175,16 @@ class AttackedFLTrustServer(AttackedServer):
     def aggregate(self) -> None:
 
         new_state = AggregationService.fl_trust(self.received_updates, self.broadcast_model)
+        self.global_model.load_state_dict(new_state)
+
+        self.current_round += 1
+        return
+    
+# CLRA
+class AttackedCLRAServer(AttackedServer):
+    def aggregate(self) -> None:
+
+        new_state = AggregationService.clra(self.received_updates, self.broadcast_model)
         self.global_model.load_state_dict(new_state)
 
         self.current_round += 1
