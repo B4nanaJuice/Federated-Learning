@@ -16,6 +16,12 @@ class MaliciousClient(Client, MaliciousEntity):
         self.attack_target: str = attack_target
     
     def send_update(self) -> Dict:
+        """
+        Sends the update to the server. If the `attack_target` is set to `model`, then the client will poison its model before sendint the update to the server.
+
+        Returns:
+            Dict: The update sent to the server.
+        """
         
         if self.attack_target == 'model' and self.can_attack():
             self.model.load_state_dict(self.poison_model(self.model, self.attack_method, self.partial_attack))
@@ -25,6 +31,15 @@ class MaliciousClient(Client, MaliciousEntity):
         return super().send_update()
     
     def get_batch(self, batch: int) -> tuple[torch.Tensor, torch.Tensor]:
+        """
+        Get the batch for the training. If the `attack_target` is set to `data`, then the client will poison the batch before training the model on it.
+
+        Args:
+            batch (int): The size of the batch.
+
+        Returns:
+            tuple[torch.Tensor, torch.Tensor]: The batch with the features and the targets.
+        """
 
         x_batch, y_batch = super().get_batch(batch = batch)
 

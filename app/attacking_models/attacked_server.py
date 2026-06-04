@@ -13,6 +13,15 @@ class AttackedServer(Server, MaliciousEntity):
         MaliciousEntity.__init__(self, **kwargs)
 
     def broadcast(self, round: int) -> Dict[str, torch.Tensor]:
+        """
+        Poisons the model before broadcasting it to the clients.
+
+        Args:
+            round (int): he id of the current round.
+
+        Returns:
+            Dict[str, torch.Tensor]: The poisonned model.
+        """
 
         if self.can_attack():
             self.global_model.load_state_dict(self.poison_model(self.global_model, self.attack_method, self.partial_attack))
