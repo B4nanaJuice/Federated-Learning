@@ -18,7 +18,13 @@ mkdir -p output
 source /gpfs/home/griesmax/Federated-Learning/venv/bin/activate
 
 for scoring in "distribution" "distance" "dataset" "similarity"; do
-    for partial in "partial" "total"; do
-        python /gpfs/home/griesmax/Federated-Learning/run.py group-data --save-filename "$scoring $partial"
+    for decay in "root" "log"; do
+        for partial in "partial" "total"; do
+            python /gpfs/home/griesmax/Federated-Learning/run.py group-data --save-filename "${decay}_$scoring $partial"
+        done
+
+        for malicious in {0..100..5}; do
+            python /gpfs/home/griesmax/Federated-Learning/run.py group-data --save-filename "${decay}_$scoring $malicious"
+        done
     done
 done
