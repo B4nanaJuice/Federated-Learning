@@ -17,7 +17,7 @@ spack load py-pip ^python@3.11.9
 mkdir -p output
 source /gpfs/home/griesmax/Federated-Learning/venv/bin/activate
 
-for scoring in "distribution" "distance" "dataset" "similarity"; do
+for scoring in "distance" "dataset"; do
     for decay in "root" "log"; do
         for partial in "partial" "total"; do
             python /gpfs/home/griesmax/Federated-Learning/run.py group-data --save-filename "${decay}_$scoring $partial"
