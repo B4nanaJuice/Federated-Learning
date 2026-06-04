@@ -392,7 +392,7 @@ class AggregationService:
                 continue
     
             accepted_layers = torch.stack(
-                [models[i][layer_name].float() for i in accepted_indices]
+                [models[i][layer_name].float().cpu() for i in accepted_indices]
             )  # shape: (n_accepted, *layer_shape)
     
             weights = torch.tensor(
