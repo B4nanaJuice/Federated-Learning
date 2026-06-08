@@ -81,6 +81,13 @@ class PlotService:
         plt.subplots_adjust(hspace = .4)
         plt.show()
 
+    # Plot matrix display for defense conparison
+    @staticmethod
+    def plot_matrix_display(rows: List[str], columns: List[str], filename_format: str = '{col} {row}.json', metric: str = 'mae'):
+        
+        matrix: pd.DataFrame = PlotService._get_matrix_data(rows, columns, filename_format, metric)
+        PlotService._plot_matrix_as_tiles(df = matrix)
+
     ### Utils methods
     # Generate dataframe for metric
     @staticmethod
@@ -205,3 +212,47 @@ class PlotService:
         g: int = min(((color >> 8) & 0x00FF ) + amount, 255)
         b: int = min((color & 0x0000FF ) + amount, 255)
         return hex((r << 16) | (g << 8) | b).replace('0x', '#')
+    
+    # Generate dataframe for matrix display
+    @staticmethod
+    def _get_matrix_data(rows: List[str], columns: List[str], filename_format: str, metric: str) -> pd.DataFrame:
+        
+        data: Dict[str, any] = {}
+
+        for col in columns:
+            data[col] = {}
+            
+            for row in rows:
+                _filename: str = filename_format.format(row = row, col = col)
+                with open(f'save/grouping/defense_comp/{_filename}', mode = 'r') as f:
+                    _data = json.load(fp = f)
+
+                data[col][row] = round(np.array(_data[metric.upper()]['load']).mean(), 2)
+
+        return pd.DataFrame(data)
+
+    # Plot dataframe as tiles
+    @staticmethod
+    def _plot_matrix_as_tiles(df: pd.DataFrame) -> None:
+        fig, ax = plt.subplots()
+        im = ax.imshow(df, cmap="Blues")
+
+        ax.set_xticks(np.arange(len(df.columns)))
+        ax.set_yticks(np.arange(len(df.index)))
+        ax.set_xticklabels(df.columns, rotation = 90)
+        ax.set_yticklabels(df.index)
+
+        for i in range(len(df.index)):
+            for j in range(len(df.columns)):
+                ax.text(
+                    j, i,
+                    df.iloc[i, j],
+                    ha="center",
+                    va="center",
+                    color="black"
+                )
+
+        plt.colorbar(im)
+
+        plt.tight_layout()
+        plt.show()
