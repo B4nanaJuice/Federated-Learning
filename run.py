@@ -85,9 +85,6 @@ def cmd_group_data(args: list[str]):
     SimulationService.group_data(**options)
 
 if __name__ == "__main__":
-    from app.degraded import check_network
-    check_network()
-    sys.exit(0)
     if len(sys.argv) < 2:
         print(f"Usage: python run.py <command>\nAvailable commands: {', '.join(COMMANDS)}")
         sys.exit(1)

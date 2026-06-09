@@ -630,7 +630,7 @@ class SimulationService:
         scoring_metric: ScoringMetric = ScoringMetric[scoring_metric_str.upper()]
         scoring_threshold: float = .4
         scoring_sigma: float = {
-            ScoringMetric.DISTANCE: 6.8,
+            ScoringMetric.DISTANCE: 7,
             ScoringMetric.DATASET: .3
         }.get(scoring_metric)
 

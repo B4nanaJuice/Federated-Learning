@@ -7,7 +7,10 @@ from tqdm import tqdm
 from typing import Dict, List
 import torch
 import copy
+from config import create_logger
 import threading
+
+logger = create_logger(__name__)
 
 class OfflineServer(AttackedServer):
     def __init__(self, global_model: nn.Module, **kwargs):
@@ -21,13 +24,13 @@ class OfflineServer(AttackedServer):
     def run(self, client_fraction: float = 1.0) -> None:
         for round in tqdm(range(1, self.max_rounds + 1), desc = 'Round'):
             self.select_clients(client_fraction)
-            print('Client selection finished, calling broadcast')
+            logger.debug('Client selection finished, calling broadcast')
             threads = self.broadcast(round = round)
-            print('Broadcast finished, calling end_model_broadcast')
+            logger.debug('Broadcast finished, calling end_model_broadcast')
             self.network.end_model_broadcast(self.collect_updates) # Start model evaluation phase
             # Clients train their local model
             [t.join() for t in threads]
-            print('end_model_broadcast finished, calling aggregate')
+            logger.debug('end_model_broadcast finished, calling aggregate')
             self.aggregate()
 
         return
@@ -35,7 +38,7 @@ class OfflineServer(AttackedServer):
     def broadcast(self, round: int, threaded: bool = True) -> List[threading.Thread]:
 
         if self.can_attack():
-            print('Server is attacking')
+            logger.debug('Server is attacking')
             self.global_model.load_state_dict(self.poison_model(self.global_model, self.attack_method, self.partial_attack))
             self.attacked_rounds.append(self.current_round)
 
