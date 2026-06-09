@@ -1,128 +1,158 @@
 # Imports
-import copy
-import numpy as np
-import random as rd
-from typing import List, Dict
-
-from app.degraded.multiline_client import MultilineClient
 from config import create_logger
+from typing import List, Dict, Callable
+from app.models import NormalMLP
+from app.degraded.offline_client import OfflineClient
 from app.degraded.network_interface import NetworkInterface
+import threading
+from enum import Enum
+import time
+import copy
+import torch
 
 logger = create_logger(__name__)
+
+class NetworkPhase(Enum):
+    MODEL_EVALUATION = 0
+    TRAINING_MODE_DECISION = 1
+    LOCAL_TRAINING = 2
 
 class NetworkException(Exception):
     def __init__(self, message: str, code: int = 400):
         self.message: str = message
         self.code: int = code
 
-# Network that will handle clients' communication
 class Network(NetworkInterface):
+
     def __init__(self):
-
-        self.client_count: int = 0
-        self.clients: List[MultilineClient] = []
-        self.adjacent_matrix: np.ndarray = []
+        self.clients: Dict[str, OfflineClient] = {}
         self.votes: Dict[str, bool] = {}
-
-    # Method for registering clients
-    def register_clients(self, clients: List[MultilineClient]) -> None:
-
-        self.clients = clients
-        for client in clients:
-            client.register_network(self)
-
-        self.client_count = len(self.clients)
-        return
-
-    # Method for choosing each client's neighbour
-    def generate_adjacent_matrix(self, k: int = 1) -> np.ndarray:
-        
-        n: int = self.client_count
-        if k >= n or k*n % 2 != 0:
-            raise NetworkException('Unable to generate a graph with these parameters.')
-        
-        self.adjacent_matrix = np.zeros((n, n), dtype = int)
-
-        for i in range(n):
-            for j in range(1, k // 2 + 1):
-                neighbour = (i + j) % n
-                self.adjacent_matrix[i, neighbour] = 1
-                self.adjacent_matrix[neighbour, i] = 1
-            
-            if k % 2 == 1:
-                neighbour = (i + n // 2) % n
-                if self.adjacent_matrix[i, neighbour] == 0:
-                    self.adjacent_matrix[i, neighbour] = 1
-                    self.adjacent_matrix[neighbour, i] = 1
-
-        return self.adjacent_matrix
+        self.majority_vote: bool = None
+        self.phase: NetworkPhase = NetworkPhase.LOCAL_TRAINING
+        self.clients_model: Dict[str, Dict] = {}
     
-    # Method for clearing votes
-    def clear_votes(self) -> int:
+    # Method for registering clients (bool is for if the client has been added)
+    def register_client(self, client: OfflineClient) -> bool: 
         
-        cleared_votes: int = len(self.votes.keys())
-        self.votes = copy.deepcopy({})
-        return cleared_votes
-    
-    # Method for adding a vote from a client
-    def add_vote(self, client_id: int | str, vote: bool) -> bool:
-        # return bool: if the vote was added: return true
-        # for any reason the vote wasn't added: return false
-        if client_id in self.votes:
-            logger.info(f'Client {client_id} has already voted for this round. Ingnoring the new vote.')
+        if client.client_id in self.clients:
+            logger.info(f'Client {client.client_id} is already registered.')
             return False
         
-        self.votes[client_id] = vote
+        client.register_network(self)
+        self.clients[client.client_id] = client
+        logger.debug(f'Successfully registered client {client.client_id}.')
         return True
+
+    # Method for registering multiple clients (int is for the number of clients added)
+    def register_clients(self, clients: List[OfflineClient]) -> int: 
+        
+        resp: List[bool] = [self.register_client(client) for client in clients]
+        return len([_ for _ in resp if _])
+
+    # Method for receiving a vote from a client (bool is for the client's vote, can be different is the lcient has already voted for this round)
+    def receive_vote(self, client_id: int | str, vote: bool) -> bool:
+
+        logger.debug(f'Received vote {vote} for client {client_id}.') 
+        
+        if client_id in self.votes:
+            logger.info(f'Client {client_id} has already voted for this round.')
+            return self.votes[client_id]
+        
+        self.votes[client_id] = vote
+        if len(self.votes.keys()) == 1:
+            logger.debug(f'Client {client_id} voted first, need to ask other clients.')
+            self.ask_vote()
+
+        return vote
+
+    # Method for asking every client to compute their vote (int is for the number of clients that have been asked)
+    def ask_vote(self) -> int: 
+        
+        clients: List[OfflineClient] = [_ for _ in self.clients.values() if _.client_id not in self.votes]
+        logger.debug(f'Asking vote for clients {clients}.')
+
+        if len(clients) > 0:
+            threads: List[threading.Thread] = []
+
+            for client in clients:
+                threads.append(threading.Thread(target = client.send_vote))
+            
+            [t.start() for t in threads]
+            threads[-1].join(5) # Wait 5 seconds after the last thread has been launched
+            # Try to kill the remaining threads
+        return len(clients)
+
+    # Method for computing the majority vote
+    def compute_majority_vote(self) -> bool: 
+        
+        true_votes: int = len([_ for _ in self.votes.values() if _])
+        return true_votes / len(self.votes.values()) > 0.5
+
+    # Method for reseting votes (new round) (int is the number of cleared votes)
+    def reset_votes(self) -> int: 
+        
+        votes_count: int = len(self.votes.values())
+        self.votes = {}
+        return votes_count
     
-    # Method for getting the majority vote
-    def get_majority_vote(self) -> bool:
+    # Method for getting the actual phase (int is for the phase id (see NetworkPhase enum class))
+    def get_phase(self) -> int: 
+        
+        return self.phase.value
+    
+    # Method for the server to tell the model has been broadcasted
+    def end_model_broadcast(self, callback: Callable) -> None: 
+
+        logger.info('Starting model evaluation phase for all the clients')
+        self.votes = {}                             # Reset votes
+        self.majority_vote = None                   # Reset majority vote
+        self.phase = NetworkPhase.MODEL_EVALUATION  # Set new phase
+        self.clients_model = {}                     # Reset exchanged models
+
+        time.sleep(6) # Wait 6 seconds to maybe get a majority vote ask
 
         if len(self.votes.keys()) == 0:
-            raise NetworkException('Unable to get the majority vote as no one voted yet.')
-        if len(self.votes.keys()) != self.client_count:
-            raise NetworkException('Not all clients have voted yet.')
-        
-        return bool(round(sum(self.votes.values())/self.client_count))
+            self.phase = NetworkPhase.LOCAL_TRAINING
+            # Call training phase for clients
+        else:
+            # Decide the training mode if there are votes (and then refresh training mode for clients)
+            self.phase = NetworkPhase.TRAINING_MODE_DECISION
+            [_.refresh_offline_training() for _ in self.clients.values()]
+            self.phase = NetworkPhase.LOCAL_TRAINING 
+        return callback()
     
-    @property
-    def majority_vote(self):
-        return self.get_majority_vote()
+    def __get_neighbour(self, client_id: int) -> int:
+        return client_id + (client_id % 2) * 2 - 1
+    
+    # Method to exchange models with client's neighbour (dict is mneighbour's model weights)
+    def exchange_model(self, source_client_id: int | str, source_client_weights: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]: 
+        
+        self.clients_model[source_client_id] = copy.deepcopy(source_client_weights)
+        neighbour_id: int = self.__get_neighbour(source_client_id)
+        logger.debug(f'Client {source_client_id} neighbour : {neighbour_id}')
+
+        # If neighbour hasn't sent their model yet, get it, and save it
+        if neighbour_id not in self.clients_model:
+            logger.debug(f'Client {neighbour_id}\'s model not saved in network, fetching it.')
+            self.clients_model[neighbour_id] = copy.deepcopy(self.clients[neighbour_id].send_saved_model())
+
+        return self.clients_model[neighbour_id]
     
 def check_network():
-    logger.info('Starting network check')
     
-    net: Network = Network()
-    clients: List[MultilineClient] = [
-        MultilineClient(1),
-        MultilineClient(2),
-        MultilineClient(3),
-        MultilineClient(4)
-    ]
-    net.register_clients(clients)
+    network: Network = Network()
 
-    assert net.client_count == len(clients)
+    clients: List[OfflineClient] = []
+    for _ in range(1, 8):
+        clients.append(OfflineClient(_, model = NormalMLP()))
 
-    for client in clients:
-        client.send_vote(rd.random() > .5)
-        assert client.client_id in net.votes
+    network.register_clients(clients)
 
-    logger.debug(f'Votes : {net.votes}')
+    clients[3].vote = False
+    clients[3].send_vote()
 
-    assert net.majority_vote in [True, False]
-    logger.debug(f'Majority vote : {net.majority_vote}')
-
-    net.clear_votes()
-    assert len(net.votes.keys()) == 0
-
-    logger.debug(f'Cleared votes : {net.votes}')
-
-    net.generate_adjacent_matrix()
-    assert type(net.adjacent_matrix) == np.ndarray
-    assert len(net.adjacent_matrix) == net.client_count
-
-    logger.debug(f'Adjacent matrix :')
-    for line in net.adjacent_matrix:
-        logger.debug(line)
-
-    logger.info('Network check ended successfully')
+    print(network.votes)
+    print('Majority vote:', network.compute_majority_vote())
+    for client in network.clients.values():
+        client.refresh_offline_training()
+        logger.info(f'Client {client.client_id}\'s offline training set to {client.offline_training}')

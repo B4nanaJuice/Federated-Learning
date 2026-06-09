@@ -610,6 +610,76 @@ class SimulationService:
             server.run_test(dataset_index = 5, days_count = 5)
             server.save_metrics(f'{defense} {malicious_percentage}_{run}')
         return
+    
+    # Offline training simulation
+    @staticmethod
+    def simulate_offline_training(*args, **options) -> None:
+        from app.degraded.network import Network
+        from app.degraded.offline_client import OfflineClient
+        from app.degraded.offline_server import OfflineServer
+    
+        # Simulation parameters from options
+        ## Overall parameters
+        run_count: int = 10
+
+        ## Attack parameters
+        attack_partial: bool = True
+
+        ## Scoring parameters
+        scoring_metric_str: str = options.get('metric', 'distance')
+        scoring_metric: ScoringMetric = ScoringMetric[scoring_metric_str.upper()]
+        scoring_threshold: float = .4
+        scoring_sigma: float = {
+            ScoringMetric.DISTANCE: 6.8,
+            ScoringMetric.DATASET: .3
+        }.get(scoring_metric)
+
+        scoring_parameters: Dict[str, any] = {'sigma': scoring_sigma}
+
+        ## Server parameters
+        server_max_rounds: int = 20
+
+        ## Client parameters
+        client_count: int = 20
+        client_epochs: int = 15
+        client_batch_size: int = 128
+        client_lr: float = 1e-3
+        client_fraction: float = .5
+
+        for run in range(run_count):
+
+            # create network and server
+            network: Network = Network()
+            server: OfflineServer = OfflineServer(
+                global_model = NormalMLP(), 
+                max_rounds = server_max_rounds, 
+                partial_attack = attack_partial, 
+                attack_rate = lambda x: x in [4, 5, 6, 7, 8, 9]
+            )
+            server.register_network(network)
+
+            clients: List[OfflineClient] = []
+            for _ in range(1, client_count + 1):
+                clients.append(
+                    OfflineClient(
+                        client_id = _,
+                        model = NormalMLP(),
+                        metric = scoring_metric,
+                        threshold = scoring_threshold,
+                        metric_parameters = scoring_parameters,
+                        local_epochs = client_epochs,
+                        batch_size = client_batch_size,
+                        learning_rate = client_lr
+                    )
+                )
+            network.register_clients(clients)
+            server.register_clients(clients)
+
+            server.run(client_fraction = client_fraction)
+
+            server.run_test(dataset_index = 5, days_count = 5)
+            server.save_metrics(f'offline {scoring_metric_str}_{run}')
+        return
 
     # Method for grouping data
     @staticmethod

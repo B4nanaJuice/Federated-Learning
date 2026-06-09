@@ -4,7 +4,7 @@ from typing import Dict
 
 from app.models import Server
 from app.attacking_models import AttackedServer
-from app.services import AggregationService
+from app.services.aggregation_service import AggregationService
     
 ## CLEAN SERVERS
 # Weighted_FedAvg

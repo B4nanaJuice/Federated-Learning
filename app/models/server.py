@@ -10,7 +10,7 @@ from typing import Optional, Dict, List
 
 from app.models.client import Client
 from config import create_logger, config
-from app.services import AggregationService
+from app.services.aggregation_service import AggregationService
 from app.models.dataloader import EnergyDataset
 
 logger = create_logger(__name__)

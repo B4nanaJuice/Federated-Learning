@@ -5,7 +5,7 @@ import torch.nn as nn
 from typing import Dict, List
 
 from config import create_logger, config
-from app.services import AggregationService
+from app.services.aggregation_service import AggregationService
 from app.models import NormalMLP, Server, Client
 from app.scoring.scoring_entity import ScoringEntity, ScoringMetric
 

@@ -72,6 +72,12 @@ def cmd_run_decay(args: list[str]) -> None:
     from app.services import SimulationService
     SimulationService.sigma_decay_measurment(**options)
 
+def cmd_run_offline(args: list[str]) -> None:
+    logger.info('Running offline training')
+    options = parse_named_options(args)
+    from app.services.simulation_service import SimulationService
+    SimulationService.simulate_offline_training(**options)
+
 def cmd_group_data(args: list[str]):
     logger.info('Running data grouping...')
     options = parse_named_options(args)
@@ -79,6 +85,9 @@ def cmd_group_data(args: list[str]):
     SimulationService.group_data(**options)
 
 if __name__ == "__main__":
+    from app.degraded import check_network
+    check_network()
+    sys.exit(0)
     if len(sys.argv) < 2:
         print(f"Usage: python run.py <command>\nAvailable commands: {', '.join(COMMANDS)}")
         sys.exit(1)
@@ -95,6 +104,7 @@ if __name__ == "__main__":
         case 'server-decay':    cmd_run_server_decay_scoring(extra_args)
         case 'client-defense':  cmd_run_client_defense(extra_args)
         case 'server-defense':  cmd_run_server_defense(extra_args)
+        case 'offline':         cmd_run_offline(extra_args)
         case 'group-data':      cmd_group_data(extra_args)
         case _:
             print(f"Unknown command: '{command}'\nAvailable commands: {', '.join(COMMANDS)}")
