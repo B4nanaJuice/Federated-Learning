@@ -26,6 +26,18 @@ class ScoringMetric(Enum):
     DATASET = 3
 
 class ScoringEntity:
+    """
+    Class representing an entity that can compute a score on a received model from another entity in a federated learning context.
+
+    Attributes:
+        scores (Dict[str, float]): Scores of entities that sent a model to this entity.
+        metrix (ScoringMetric): Metrix used to compute the score.
+        threshold (float): Value used to compare the score and decide if the model need to be replaced by the saved one.
+        saved_model (Dict[str, torch.Tensor]): Model that will be loaded if the score is below the threshold.
+        metric_parameters (Dict[str, any]): Parameters used to compute the metric. Used only for distance and dataset scoring metrics.
+        rejected_models (List[int]): Number of rejected models per round.
+        dataset (EvergyDataset): Data used to compute the dataset metric.
+    """
     def __init__(self,
                  metric: ScoringMetric = ScoringMetric.DISTANCE,
                  threshold: float = .4,
@@ -43,10 +55,20 @@ class ScoringEntity:
         # Validation dataset
         self._tensor: torch.Tensor = torch.load(f'app/scoring/validation_dataset.pt')
         self._features: torch.Tensor = self._tensor[:, :-3]
-        self._targets: torch.Tensor = self._tensor[:, -3:] # Take only the pv
+        self._targets: torch.Tensor = self._tensor[:, -3:]
         self.dataset: EnergyDataset = EnergyDataset(self._features, self._targets)
 
     def compute_score(self, entity_name: str, model: Dict[str, torch.Tensor]) -> float:
+        """
+        Compute score for an entity that send the model to this entity.
+
+        Args:
+            entity_name (str): Name or ID of the entity sending the model.
+            model (Dict[str, torch.Tensor]): Weights of the sent model.
+
+        Returns:
+            float: The score between 0 (no trust) and 1 (full trust)
+        """
 
         if not self.saved_model:
             self.scores[entity_name] = 1
@@ -67,7 +89,14 @@ class ScoringEntity:
 
     def get_distribution(self, model: Dict[str, torch.Tensor], bins = 100) -> float:
         """
-        Distribution based on Jensen-Shannon divergence score
+        Compute the score based on Jensen-Shannon divergence score.
+
+        Args:
+            model (Dict[str, torch.Tensor]): Weoghts of the sent model.
+            bins (int = 100): Number of bars in the histogramm.
+
+        Returns:
+            float: The score
         """
 
         if 'bins' in self.metric_parameters:
@@ -94,7 +123,16 @@ class ScoringEntity:
         
 
     def get_distance(self, model: Dict[str, torch.Tensor], sigma: float = 1.0) -> float:
+        """
+        Compute score based on euclidian distance. The distance is between 0 and +infinity so an exponential with decay factor is applied to compute a score between 0 and 1.
 
+        Args:
+            model (Dict[str, torch.Tensor]): Weights of the model.
+            sigma (float = 1.0): Decay factor.
+
+        Returns:
+            float: The score.
+        """
         if 'sigma' in self.metric_parameters:
             logger.info(f'Taking sigma from parameters: {self.metric_parameters["sigma"]}')
             sigma = self.metric_parameters['sigma']
@@ -114,6 +152,15 @@ class ScoringEntity:
         return torch.exp(torch.tensor(-dist / sigma)).item()
 
     def get_similarity(self, model: Dict[str, torch.Tensor]) -> float:
+        """
+        Compute score based on cosine, magnitude and sign similarity.
+
+        Args:
+            model (Dict[str, torch.Tensor]): Weights of the model.
+
+        Returns:
+            float: The score.
+        """
         
         w_a: torch.Tensor = torch.cat([p.data.flatten().cpu() for p in model.values()])
         w_b: torch.Tensor = torch.cat([p.data.flatten().cpu() for p in self.saved_model.values()])
@@ -127,6 +174,16 @@ class ScoringEntity:
         return (cosine + sign + magnitude) / 3
     
     def get_validation(self, model: Dict[str, torch.Tensor], sigma: float = 1.0) -> float:
+        """
+        Compute score based on a validation dataset. The MAE is between 0 and +infinity so an exponential with decay factor is applied to compute a score between 0 and 1.
+
+        Args:
+            model (Dict[str, torch.Tensor]): Weights of the model.
+            sigma (float = 1.0): Decay factor.
+
+        Returns:
+            float: The score.
+        """
 
         if 'sigma' in self.metric_parameters:
             logger.info(f'Taking sigma from parameters: {self.metric_parameters["sigma"]}')

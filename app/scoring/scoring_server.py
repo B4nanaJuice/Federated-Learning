@@ -17,13 +17,29 @@ class ScoringServer(Server, ScoringEntity):
         Server.__init__(self, global_model, **kwargs)
         ScoringEntity.__init__(self, **kwargs)
 
-    def broadcast(self, round: int) -> Dict[str, torch.Tensor]:
+    def broadcast(self, round_id: int, threaded: bool = config.SIM_THREADED) -> Dict[str, torch.Tensor]:
+        """
+        Broadcast the model to selected clients. Make a save of the gloabl model before broadcasting it to the clients.
 
-        broadcasted_model: Dict[str, torch.Tensor] = super().broadcast(round)
+        Args:
+            round_id (int): The current round.
+            threaded (bool = config.SIM_THREADED): Broadcast the model in parallel or on a signle thread.
+
+        Returns:
+            Dict[str, torch.Tensor]: The broadcasted model's weights.
+        """
+
+        broadcasted_model: Dict[str, torch.Tensor] = super().broadcast(round_id, threaded)
         self.saved_model = copy.deepcopy(broadcasted_model)
         return self.broadcast_model
 
     def collect_updates(self, threaded: bool = config.SIM_THREADED) -> None:
+        """
+        Tell clients to train their local model and collect update of each client participating in the current round. Compute a score for each received model in order to keep it or not for the aggregation phase.
+
+        Args:
+            threaded (bool = config.SIM_THREADED): Train the clients on different threads or on a single one.
+        """
 
         super().collect_updates(threaded = threaded)
 
@@ -48,6 +64,9 @@ class ScoringServer(Server, ScoringEntity):
         return
     
     def aggregate(self) -> None:
+        """
+        Aggregate all the received updates into one model. The default aggregation method is FedAvg. If no model is kept (all received models have a trust score too low), then the previous global model is taken.
+        """
 
         self.current_round += 1
 

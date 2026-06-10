@@ -17,6 +17,13 @@ class ScoringClient(Client, ScoringEntity):
         ScoringEntity.__init__(self, **kwargs)
 
     def receive_global_model(self, global_weights: Dict[int, torch.Tensor], round_id: int) -> None:
+        """
+        Receive global model weights from the server and update the local model. A score is computed to decide whether the client keeps or not the received model.
+        
+        Args:
+            global_weights (Dict[int, torch.Tensor]): The global model weights received from the server.
+            round_id (int): The id of the began round.
+        """
 
         self.compute_score('server', global_weights)
         logger.info(f'Score of server: {self.scores.get("server")}')
@@ -32,6 +39,13 @@ class ScoringClient(Client, ScoringEntity):
         return
     
     def send_update(self) -> Dict:
+        """
+        Send client's local model to the aggregation server. Make a copy of the current local model before sending the update to the server.
+
+        Returns:
+            Dict: A dictionary containing the client's id, the weights of the local model after the 
+            training and the loss computed during the training phase.
+        """
         # Save model
         self.saved_model = copy.deepcopy(self.model.state_dict())
         return super().send_update()
