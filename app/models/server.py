@@ -78,12 +78,12 @@ class Server:
         self.selected_clients = rd.sample(list(self.client_registry.values()), k)
         return self.selected_clients
     
-    def broadcast(self, round: int, threaded: bool = config.SIM_THREADED) -> Dict[str, torch.Tensor]:
+    def broadcast(self, round_id: int, threaded: bool = config.SIM_THREADED) -> Dict[str, torch.Tensor]:
         """
         Broadcast the model to selected clients.
 
         Args:
-            round (int): The current round.
+            round_id (int): The current round.
             threaded (bool = config.SIM_THREADED): Broadcast the model in parallel or on a signle thread.
 
         Returns:
@@ -94,13 +94,13 @@ class Server:
         if threaded:
             threads: List[threading.Thread] = []
             for client in self.selected_clients:
-                threads.append(threading.Thread(target = client.receive_global_model, args = (self.broadcast_model, round)))
+                threads.append(threading.Thread(target = client.receive_global_model, args = (self.broadcast_model, round_id)))
 
             [t.start() for t in threads]
             [t.join() for t in threads]
         else:
             for client in self.selected_clients:
-                client.receive_global_model(self.broadcast_model, round)
+                client.receive_global_model(self.broadcast_model, round_id)
             pass
         return self.broadcast_model
     
