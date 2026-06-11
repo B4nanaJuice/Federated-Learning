@@ -203,7 +203,7 @@ class SimulationService:
                 global_model = NormalMLP(),
                 max_rounds = server_max_rounds,
                 partial_attack = attack_partial,
-                attack_rate = lambda x: x in [5, 6, 7, 17, 18, 19] if attack_partial else x == 19
+                attack_rate = lambda x: x in [4, 5, 6, 7, 8, 9] if attack_partial else x == 19
             )
 
             for _ in range(client_count):
