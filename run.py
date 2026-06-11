@@ -33,43 +33,43 @@ def cmd_run_simulation(args: list[str]):
 def cmd_run_client_scoring(args: list[str]) -> None:
     logger.info('Running client scoring simulation')
     options = parse_named_options(args)
-    from app.services import SimulationService
+    from app.services.simulation_service import SimulationService
     SimulationService.simulate_client_scoring(**options)
 
 def cmd_run_server_scoring(args: list[str]):
     logger.info('Running server scoring simulation')
     options = parse_named_options(args)
-    from app.services import SimulationService
+    from app.services.simulation_service import SimulationService
     SimulationService.simulate_server_scoring(**options)
 
 def cmd_run_client_decay_scoring(args: list[str]) -> None:
     logger.info('Running client scoring simulation')
     options = parse_named_options(args)
-    from app.services import SimulationService
+    from app.services.simulation_service import SimulationService
     SimulationService.simulate_client_decay_scoring(**options)
 
 def cmd_run_server_decay_scoring(args: list[str]) -> None:
     logger.info('Running server scoring simulation')
     options = parse_named_options(args)
-    from app.services import SimulationService
+    from app.services.simulation_service import SimulationService
     SimulationService.simulate_server_decay_scoring(**options)
 
 def cmd_run_client_defense(args: list[str]) -> None:
     logger.info('Running client defense simulation')
     options = parse_named_options(args)
-    from app.services import SimulationService
+    from app.services.simulation_service import SimulationService
     SimulationService.simulate_client_defense(**options)
 
 def cmd_run_server_defense(args: list[str]) -> None:
     logger.info('Running server defense simulation')
     options = parse_named_options(args)
-    from app.services import SimulationService
+    from app.services.simulation_service import SimulationService
     SimulationService.simulate_server_defense(**options)
 
 def cmd_run_decay(args: list[str]) -> None:
     logger.info('Running decay measurment')
     options = parse_named_options(args)
-    from app.services import SimulationService
+    from app.services.simulation_service import SimulationService
     SimulationService.sigma_decay_measurment(**options)
 
 def cmd_run_offline(args: list[str]) -> None:
@@ -81,7 +81,7 @@ def cmd_run_offline(args: list[str]) -> None:
 def cmd_group_data(args: list[str]):
     logger.info('Running data grouping...')
     options = parse_named_options(args)
-    from app.services import SimulationService
+    from app.services.simulation_service import SimulationService
     SimulationService.group_data(**options)
 
 if __name__ == "__main__":
