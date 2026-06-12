@@ -18,5 +18,5 @@ mkdir -p output
 source /gpfs/home/griesmax/Federated-Learning/venv/bin/activate
 
 for defense in "distance" "distribution" "similarity" "dataset"; do
-    python /gpfs/home/griesmax/Federated-Learning/run.py group-data --save-filename "offline $defense"
+    python /gpfs/home/griesmax/Federated-Learning/run.py group-data --save-filename "$defense partial"
 done
