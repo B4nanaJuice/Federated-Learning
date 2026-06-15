@@ -15,6 +15,11 @@ logger = create_logger(__name__)
 # Static class with methods
 class SimulationService:
 
+    # Baseline simulations
+    @staticmethod
+    def simulate_baseline(*args, **options) -> None:
+        pass
+
     # Scoring-based simulation
     @staticmethod
     def sigma_measurment(*args, **options) -> None:
@@ -203,7 +208,7 @@ class SimulationService:
                 global_model = NormalMLP(),
                 max_rounds = server_max_rounds,
                 partial_attack = attack_partial,
-                attack_rate = lambda x: x in [4, 5, 6, 7, 8, 9] if attack_partial else x == 19
+                attack_rate = lambda x: x in list(range(13, 21)) if attack_partial else x == 19
             )
 
             for _ in range(client_count):
@@ -354,7 +359,7 @@ class SimulationService:
                 global_model = NormalMLP(),
                 max_rounds = server_max_rounds,
                 partial_attack = attack_partial,
-                attack_rate = lambda x: x in [5, 6, 7, 17, 18, 19] if attack_partial else x == 19
+                attack_rate = lambda x: x in list(range(13, 21)) if attack_partial else x == 19
             )
 
             for _ in range(client_count):
@@ -498,7 +503,7 @@ class SimulationService:
             'global_model': NormalMLP(),
             'max_rounds': server_max_rounds, # 20
             'partial_attack': attack_partial,
-            'attack_rate': lambda x: x in [5, 6, 7, 17, 18, 19] if attack_partial else x == 19
+            'attack_rate': lambda x: x in list(range(13, 21)) if attack_partial else x == 19
         }
 
         for run in range(run_count):
@@ -517,7 +522,7 @@ class SimulationService:
 
             for _ in range(client_count):
                 server.register_client(
-                    ScoringClient(
+                    Client(
                         client_id = _+1,
                         model = NormalMLP(),
                         local_epochs = client_epochs,
@@ -654,7 +659,7 @@ class SimulationService:
                 global_model = NormalMLP(), 
                 max_rounds = server_max_rounds, 
                 partial_attack = attack_partial, 
-                attack_rate = lambda x: x in [4, 5, 6, 7, 8, 9]
+                attack_rate = lambda x: x in list(range(13, 21))
             )
             server.register_network(network)
 
