@@ -27,4 +27,4 @@ class AttackedServer(Server, MaliciousEntity):
             self.global_model.load_state_dict(self.poison_model(self.global_model, self.attack_method, self.partial_attack))
             self.attacked_rounds.append(self.current_round)
 
-        return super().broadcast(round)
+        return super().broadcast(round_id, threaded = threaded)
