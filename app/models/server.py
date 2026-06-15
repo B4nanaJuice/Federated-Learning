@@ -151,9 +151,9 @@ class Server:
         Args:
             client_fraction (float = 1.0): The fraction of clients that will participate in each round.
         """
-        for round in tqdm(range(1, self.max_rounds + 1), desc = 'Round'):
+        for round_id in tqdm(range(1, self.max_rounds + 1), desc = 'Round'):
             self.select_clients(client_fraction)
-            self.broadcast(round = round)
+            self.broadcast(round_id = round_id)
             self.collect_updates()
             self.aggregate()
 
