@@ -53,6 +53,7 @@ class MaliciousEntity:
         model: Dict[str, torch.Tensor] = model.state_dict()
         keys: List = list(model.keys())
         target_keys: List = keys[-4:] if partial else keys
+        torch.manual_seed(0)   # Set seed for fixed random weights
 
         match attack_method:
             case 'gaussian_noise':
