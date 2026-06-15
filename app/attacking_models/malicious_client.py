@@ -44,6 +44,8 @@ class MaliciousClient(Client, MaliciousEntity):
         x_batch, y_batch = super().get_batch(batch = batch)
 
         if self.attack_method == 'data' and self.can_attack():
+            torch.manual_seed(0)
+            
             match self.attack_method:
                 case 'gaussian_noise':
                     x_batch += torch.randn_like(x_batch)
