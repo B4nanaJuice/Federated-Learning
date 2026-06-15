@@ -195,7 +195,7 @@ class PlotService:
             # plt.plot(x_range, df['min'], '--', color = color)
             # plt.plot(x_range, df['max'], '--', color = color)
 
-        plt.title('Training loss for different attacks')
+        plt.title('Training loss for partial attack on central server and defense')
         plt.xlabel('Round')
         plt.ylabel('Mean Square Error (MSE) Loss')
         plt.yscale('log')
