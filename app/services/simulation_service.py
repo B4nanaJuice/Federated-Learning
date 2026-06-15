@@ -222,6 +222,7 @@ class SimulationService:
             )
 
             # Add Malicious clients
+            _ = 1
             while _ <= client_count:
                 server.register_client(
                     Client(
