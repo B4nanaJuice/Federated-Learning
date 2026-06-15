@@ -12,7 +12,7 @@ class AttackedServer(Server, MaliciousEntity):
         Server.__init__(self, global_model, **kwargs)
         MaliciousEntity.__init__(self, **kwargs)
 
-    def broadcast(self, round: int) -> Dict[str, torch.Tensor]:
+    def broadcast(self, round_id: int, threaded: bool = True) -> Dict[str, torch.Tensor]:
         """
         Poisons the model before broadcasting it to the clients.
 
