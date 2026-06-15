@@ -18,12 +18,4 @@ mkdir -p output
 source /gpfs/home/griesmax/Federated-Learning/venv/bin/activate
 
 # Attacker that has total access on server's model
-python run.py run-simulation --run-count 10 \
-    --max-rounds 20 \
-    --total-clients 20 \
-    --malicious-client-count 0 \
-    --client-fraction 0.5 \
-    --epochs 15 \
-    --attacked-server True \
-    --save-filename "total_takeover" \
-    --server-attack-rate "lambda x: x == 8"
+python run.py server --partial false

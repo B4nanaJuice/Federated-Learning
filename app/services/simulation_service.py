@@ -18,7 +18,227 @@ class SimulationService:
     # Baseline simulations
     @staticmethod
     def simulate_baseline(*args, **options) -> None:
-        pass
+        
+        # Simulation parameters from options
+        ## Overall parameters
+        run_count: int = 10
+
+        ## Server parameters
+        server_max_rounds: int = 20
+
+        ## Client parameters
+        client_count: int = 20
+        client_epochs: int = 15
+        client_batch_size: int = 128
+        client_lr: float = 1e-3
+        client_fraction: float = .5
+
+        for run in range(run_count):
+            
+            # Create Attacked server
+            server: Server = Server(
+                global_model = NormalMLP(),
+                max_rounds = server_max_rounds
+            )
+
+            for _ in range(client_count):
+                server.register_client(
+                    Client(
+                        client_id = _+1,
+                        model = NormalMLP(),
+                        local_epochs = client_epochs,
+                        batch_size = client_batch_size,
+                        learning_rate = client_lr
+                    )
+                )
+
+            server.run(client_fraction = client_fraction)
+
+            server.run_test(dataset_index = 5, days_count = 5)
+            server.save_metrics(f'clean_{run}')
+        return
+    
+    # Baseline simulations
+    @staticmethod
+    def simulate_data_poisoning(*args, **options) -> None:
+        
+        # Simulation parameters from options
+        ## Overall parameters
+        run_count: int = 10
+
+        ## Attack parameters
+        malicious_percentage: float = float(options.get('malicious', 0))
+        assert 0 <= malicious_percentage <= 100
+
+        ## Server parameters
+        server_max_rounds: int = 20
+
+        ## Client parameters
+        client_count: int = 20
+        client_epochs: int = 15
+        client_batch_size: int = 128
+        client_lr: float = 1e-3
+        client_fraction: float = .5
+
+        for run in range(run_count):
+            
+            # Create Attacked server
+            server: Server = Server(
+                global_model = NormalMLP(),
+                max_rounds = server_max_rounds
+            )
+
+            # Add Malicious clients
+            _ = 1
+            while _ <= int(client_count * malicious_percentage / 100):
+                server.register_client(
+                    MaliciousClient(
+                        client_id = _,
+                        model = NormalMLP(),
+                        local_epochs = client_epochs,
+                        batch_size = client_batch_size,
+                        learning_rate = client_lr,
+                        attack_rate = 1,
+                        attack_target = 'data'
+                    )
+                )
+                _ += 1
+
+            while _ <= client_count:
+                server.register_client(
+                    Client(
+                        client_id = _,
+                        model = NormalMLP(),
+                        local_epochs = client_epochs,
+                        batch_size = client_batch_size,
+                        learning_rate = client_lr,
+                    )
+                )
+                _ += 1
+
+            server.run(client_fraction = client_fraction)
+
+            server.run_test(dataset_index = 5, days_count = 5)
+            server.save_metrics(f'{malicious_percentage}_data_{run}')
+        return
+    
+    # Baseline simulations
+    @staticmethod
+    def simulate_model_poisoning(*args, **options) -> None:
+        
+        # Simulation parameters from options
+        ## Overall parameters
+        run_count: int = 10
+
+        ## Attack parameters
+        malicious_percentage: float = float(options.get('malicious', 0))
+        assert 0 <= malicious_percentage <= 100
+        attack_method: str = options.get('attack', 'gaussian_noise')
+        assert attack_method in ['gaussian_noise', 'gaussian_weights', 'uniform_noise', 'uniform_weights', 'gradient_inversion', 'gradient_amplification']
+
+        ## Server parameters
+        server_max_rounds: int = 20
+
+        ## Client parameters
+        client_count: int = 20
+        client_epochs: int = 15
+        client_batch_size: int = 128
+        client_lr: float = 1e-3
+        client_fraction: float = .5
+
+        for run in range(run_count):
+            
+            # Create Attacked server
+            server: Server = Server(
+                global_model = NormalMLP(),
+                max_rounds = server_max_rounds
+            )
+
+            # Add Malicious clients
+            _ = 1
+            while _ <= int(client_count * malicious_percentage / 100):
+                server.register_client(
+                    MaliciousClient(
+                        client_id = _,
+                        model = NormalMLP(),
+                        local_epochs = client_epochs,
+                        batch_size = client_batch_size,
+                        learning_rate = client_lr,
+                        attack_rate = 1,
+                        attack_method = attack_method,
+                        attack_target = 'model'
+                    )
+                )
+                _ += 1
+
+            while _ <= client_count:
+                server.register_client(
+                    Client(
+                        client_id = _,
+                        model = NormalMLP(),
+                        local_epochs = client_epochs,
+                        batch_size = client_batch_size,
+                        learning_rate = client_lr,
+                    )
+                )
+                _ += 1
+
+            server.run(client_fraction = client_fraction)
+
+            server.run_test(dataset_index = 5, days_count = 5)
+            server.save_metrics(f'{malicious_percentage}_{attack_method}_{run}')
+        return
+    
+    # Baseline simulations
+    @staticmethod
+    def simulate_server_attack(*args, **options) -> None:
+        
+        # Simulation parameters from options
+        ## Overall parameters
+        run_count: int = 10
+
+        ## Attack parameters
+        attack_partial: bool = options.get('partial', 'true').lower() == 'true'
+        assert attack_partial in [True, False]
+
+        ## Server parameters
+        server_max_rounds: int = 20
+
+        ## Client parameters
+        client_count: int = 20
+        client_epochs: int = 15
+        client_batch_size: int = 128
+        client_lr: float = 1e-3
+        client_fraction: float = .5
+
+        for run in range(run_count):
+            
+            # Create Attacked server
+            server: Server = AttackedServer(
+                global_model = NormalMLP(),
+                max_rounds = server_max_rounds,
+                attack_rate = lambda x: x in list(range(13, 21)) if attack_partial else x == 19,
+                partial_attack = attack_partial
+            )
+
+            # Add Malicious clients
+            while _ <= client_count:
+                server.register_client(
+                    Client(
+                        client_id = _,
+                        model = NormalMLP(),
+                        local_epochs = client_epochs,
+                        batch_size = client_batch_size,
+                        learning_rate = client_lr,
+                    )
+                )
+                _ += 1
+
+            server.run(client_fraction = client_fraction)
+
+            server.run_test(dataset_index = 5, days_count = 5)
+            server.save_metrics(f'{"partial" if attack_partial else "total"}_{run}')
+        return
 
     # Scoring-based simulation
     @staticmethod

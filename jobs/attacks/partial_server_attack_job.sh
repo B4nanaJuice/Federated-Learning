@@ -18,13 +18,4 @@ mkdir -p output
 source /gpfs/home/griesmax/Federated-Learning/venv/bin/activate
 
 # Attacker that will poison only last layer of the broadcasted model
-python run.py run-simulation --run-count 10 \
-    --max-rounds 20 \
-    --total-clients 20 \
-    --malicious-client-count 0 \
-    --client-fraction 0.5 \
-    --epochs 15 \
-    --attacked-server True \
-    --save-filename "partial_corruption" \
-    --server-attack-rate "lambda x: x in [7, 8, 12, 14]" \
-    --partial-attack True
+python run.py server --partial true

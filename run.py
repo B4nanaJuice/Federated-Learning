@@ -24,11 +24,24 @@ def cmd_preprocess():
     iid: bool = sys.argv[-1] == 'iid'
     run_preprocessing(iid = iid)
 
-def cmd_run_simulation(args: list[str]):
-    logger.info('Running simulation...')
+def cmd_run_baseline():
+    from app.services.simulation_service import SimulationService
+    SimulationService.simulate_baseline()
+
+def cmd_run_data_poisoning(args: list[str]):
     options = parse_named_options(args)
-    from app import multi_run
-    multi_run(**options)
+    from app.services.simulation_service import SimulationService
+    SimulationService.simulate_data_poisoning(**options)
+
+def cmd_run_model_poisoning(args: list[str]):
+    options = parse_named_options(args)
+    from app.services.simulation_service import SimulationService
+    SimulationService.simulate_model_poisoning(**options)
+
+def cmd_run_attack_server(args: list[str]):
+    options = parse_named_options(args)
+    from app.services.simulation_service import SimulationService
+    SimulationService.simulate_server_attack(**options)
 
 def cmd_run_client_scoring(args: list[str]) -> None:
     logger.info('Running client scoring simulation')
@@ -93,7 +106,10 @@ if __name__ == "__main__":
 
     match command:
         case 'preprocess':      cmd_preprocess()
-        case 'run-simulation':  cmd_run_simulation(extra_args)
+        case 'baseline':        cmd_run_baseline()
+        case 'data':            cmd_run_data_poisoning(extra_args)
+        case 'model':           cmd_run_model_poisoning(extra_args)
+        case 'server':          cmd_run_attack_server(extra_args)
         case 'client-scoring':  cmd_run_client_scoring(extra_args)
         case 'server-scoring':  cmd_run_server_scoring(extra_args)
         case 'run-decay':       cmd_run_decay(extra_args)

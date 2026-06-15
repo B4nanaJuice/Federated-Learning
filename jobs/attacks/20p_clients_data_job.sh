@@ -18,12 +18,4 @@ mkdir -p output
 source /gpfs/home/griesmax/Federated-Learning/venv/bin/activate
 
 # 5% malicious clients attacking their data continuously
-python run.py run-simulation --run-count 10 \
-    --max-rounds 20 \
-    --total-clients 20 \
-    --malicious-client-count 4 \
-    --client-fraction 0.5 \
-    --epochs 15 \
-    --save-filename "20%_clients_data" \
-    --client-attack-rate "lambda x: True" \
-    --client-attack-target data
+python run.py data --malicious 20
