@@ -9,6 +9,7 @@ from sklearn.metrics import mean_squared_error, root_mean_squared_error, mean_ab
 from typing import Optional, Dict, List
 
 from app.models.client import Client
+from app.attacking_models.malicious_client import MaliciousClient
 from config import create_logger, config
 from app.services.aggregation_service import AggregationService
 from app.models.dataloader import EnergyDataset
@@ -128,7 +129,8 @@ class Server:
         training_loss: List[float] = []
         for client in self.selected_clients:
             update = client.send_update()
-            training_loss.append(update.get('train_loss'))
+            if type(client) != MaliciousClient:
+                training_loss.append(update.get('train_loss'))
             self.received_updates.append(update)
 
         self.training_loss.append(training_loss)
