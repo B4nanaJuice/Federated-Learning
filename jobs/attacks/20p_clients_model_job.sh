@@ -18,4 +18,4 @@ mkdir -p output
 source /gpfs/home/griesmax/Federated-Learning/venv/bin/activate
 
 # 5% malicious clients attacking their data continuously
-python run.py --malicious 20 --attack "gaussian_weights"
+python run.py model --malicious 20 --attack "gaussian_weights"
