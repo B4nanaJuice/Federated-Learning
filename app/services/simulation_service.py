@@ -67,7 +67,7 @@ class SimulationService:
         run_count: int = 10
 
         ## Attack parameters
-        malicious_percentage: float = float(options.get('malicious', 0))
+        malicious_percentage: int = int(options.get('malicious', 0))
         assert 0 <= malicious_percentage <= 100
 
         ## Server parameters
@@ -131,7 +131,7 @@ class SimulationService:
         run_count: int = 10
 
         ## Attack parameters
-        malicious_percentage: float = float(options.get('malicious', 0))
+        malicious_percentage: int = int(options.get('malicious', 0))
         assert 0 <= malicious_percentage <= 100
         attack_method: str = options.get('attack', 'gaussian_noise')
         assert attack_method in ['gaussian_noise', 'gaussian_weights', 'uniform_noise', 'uniform_weights', 'gradient_inversion', 'gradient_amplification']
