@@ -17,6 +17,17 @@ spack load py-pip ^python@3.11.9
 mkdir -p output
 source /gpfs/home/griesmax/Federated-Learning/venv/bin/activate
 
-for defense in "distance" "distribution" "similarity" "dataset"; do
+for defense in "fedavg" "krum" "mkrum" "norm" "cbaa" "rfa" "tmean" "fltrust" "clra"; do
     python /gpfs/home/griesmax/Federated-Learning/run.py group-data --save-filename "$defense partial"
+    python /gpfs/home/griesmax/Federated-Learning/run.py group-data --save-filename "$defense total"
 done
+
+python /gpfs/home/griesmax/Federated-Learning/run.py group-data --save-filename "clean"
+python /gpfs/home/griesmax/Federated-Learning/run.py group-data --save-filename "5.0_data"
+python /gpfs/home/griesmax/Federated-Learning/run.py group-data --save-filename "20.0_data"
+python /gpfs/home/griesmax/Federated-Learning/run.py group-data --save-filename "5.0_gaussian_weights"
+python /gpfs/home/griesmax/Federated-Learning/run.py group-data --save-filename "20.0_gaussian_weights"
+python /gpfs/home/griesmax/Federated-Learning/run.py group-data --save-filename "20.0_gradient_amplification"
+python /gpfs/home/griesmax/Federated-Learning/run.py group-data --save-filename "20.0_gradient_inversion"
+python /gpfs/home/griesmax/Federated-Learning/run.py group-data --save-filename "partial"
+python /gpfs/home/griesmax/Federated-Learning/run.py group-data --save-filename "total"
