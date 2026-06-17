@@ -36,7 +36,7 @@ class MaliciousEntity:
         self.partial_attack: bool = partial_attack
 
     @staticmethod
-    def poison_model(model: nn.Module, attack_method: str, partial: bool, coef: float = 1) -> Dict[str, torch.Tensor]:
+    def poison_model(model: nn.Module, attack_method: str, partial: bool, coef: float = 2) -> Dict[str, torch.Tensor]:
         """
         Poison the model
 
