@@ -939,7 +939,7 @@ class SimulationService:
             if not output_data['training_loss']:
                 output_data['training_loss'] = [np.array(data['training_loss']).mean(axis = 1)]
             else:
-                output_data['training_loss'] = np.append(output_data['training_loss'], [np.array(data['training_loss']).mean(axis = 1)], axis = 0).tolist()
+                output_data['training_loss'] += np.array(data['training_loss']).mean(axis = 1).tolist()
 
             # Append each metric for each column
             for _m in metrics_name:
