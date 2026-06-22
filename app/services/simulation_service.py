@@ -937,7 +937,7 @@ class SimulationService:
             # Append training loss
             # Output list of list is a matrix with run_count rows and rounds columns
             if not output_data['training_loss']:
-                output_data['training_loss'] = [np.array(data['training_loss']).mean(axis = 1)]
+                output_data['training_loss'] = [np.array(data['training_loss']).mean(axis = 1).tolist()]
             else:
                 output_data['training_loss'] += np.array(data['training_loss']).mean(axis = 1).tolist()
 
