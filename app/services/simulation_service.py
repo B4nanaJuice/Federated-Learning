@@ -936,7 +936,7 @@ class SimulationService:
 
             # Append training loss
             # Output list of list is a matrix with run_count rows and rounds columns
-            output_data['training_loss'].append(np.array(data['training_loss']).mean(axis = 1).tolist())
+            output_data['training_loss'].append([sum(_)/len(_) for _ in data['training_loss']])
 
             # Append each metric for each column
             for _m in metrics_name:
