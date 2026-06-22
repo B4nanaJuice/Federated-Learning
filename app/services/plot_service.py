@@ -224,7 +224,7 @@ class PlotService:
             
             for row in rows:
                 _filename: str = filename_format.format(row = row, col = col)
-                with open(f'save/grouping/defense_comp/{_filename}', mode = 'r') as f:
+                with open(f'save/grouping/{_filename}', mode = 'r') as f:
                     _data = json.load(fp = f)
 
                 data[col][row] = round(np.array(_data[metric.upper()]['load']).mean(), 2)
