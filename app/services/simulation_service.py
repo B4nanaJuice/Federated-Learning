@@ -924,7 +924,7 @@ class SimulationService:
         columns: List[str] = ['load', 'pv', 'net']
 
         output_data: Dict[str, any] = {
-            'training_loss': None,
+            'training_loss': [],
             'MAE': {k: [] for k in ['load', 'pv', 'net']},
             'MSE': {k: [] for k in ['load', 'pv', 'net']},
             'RMSE': {k: [] for k in ['load', 'pv', 'net']}
@@ -936,10 +936,7 @@ class SimulationService:
 
             # Append training loss
             # Output list of list is a matrix with run_count rows and rounds columns
-            if not output_data['training_loss']:
-                output_data['training_loss'] = [np.array(data['training_loss']).mean(axis = 1).tolist()]
-            else:
-                output_data['training_loss'] += np.array(data['training_loss']).mean(axis = 1).tolist()
+            output_data['training_loss'].append(np.array(data['training_loss']).mean(axis = 1).tolist())
 
             # Append each metric for each column
             for _m in metrics_name:
