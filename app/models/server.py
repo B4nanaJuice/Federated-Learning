@@ -128,8 +128,7 @@ class Server:
         training_loss: List[float] = []
         for client in self.selected_clients:
             update = client.send_update()
-            if type(client) == Client:
-                training_loss.append(update.get('train_loss'))
+            training_loss.append(update.get('train_loss'))
             self.received_updates.append(update)
 
         self.training_loss.append(training_loss)
