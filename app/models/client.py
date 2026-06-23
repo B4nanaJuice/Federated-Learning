@@ -29,12 +29,14 @@ class Client:
         self.current_round: int = 0
 
         # Local data
-        self._train_tensor: torch.Tensor = torch.load(f'data/processed/train/{"iid" if iid else "noniid"}/building_{client_id}.pt')
+        # self._train_tensor: torch.Tensor = torch.load(f'data/processed/train/{"iid" if iid else "noniid"}/building_{client_id}.pt')
+        self._train_tensor: torch.Tensor = torch.load(f'data/processed/train/{"iid" if iid else "noniid"}/building_1.pt')
         self._train_features: torch.Tensor = self._train_tensor[:, :-3]
         self._train_targets: torch.Tensor = self._train_tensor[:, -3:]
         self.train_dataset: EnergyDataset = EnergyDataset(self._train_features, self._train_targets)
 
-        self._validation_tensor: torch.Tensor = torch.load(f'data/processed/val/{"iid" if iid else "noniid"}/building_{client_id}.pt')
+        # self._validation_tensor: torch.Tensor = torch.load(f'data/processed/val/{"iid" if iid else "noniid"}/building_{client_id}.pt')
+        self._validation_tensor: torch.Tensor = torch.load(f'data/processed/val/{"iid" if iid else "noniid"}/building_1.pt')
         self._validation_features: torch.Tensor = self._validation_tensor[:, :-3]
         self._validation_targets: torch.Tensor = self._validation_tensor[:, -3:]
         self.validation_dataset: EnergyDataset = EnergyDataset(self._validation_features, self._validation_targets)
