@@ -3,6 +3,7 @@ import copy
 import json
 import torch
 import threading
+import random as rd
 import torch.nn as nn
 from tqdm import tqdm
 from sklearn.metrics import mean_squared_error, root_mean_squared_error, mean_absolute_error
@@ -22,6 +23,8 @@ class Server:
                  max_rounds: int = 50,
                  **kwargs
                  ):
+        
+        rd.seed(0)
         
         # Coordination
         self.current_round: int = 0
@@ -73,7 +76,7 @@ class Server:
         Returns:
             List[Client]: A list containing the selected clients.
         """
-        import random as rd
+        
         k = int(len(self.client_registry) * fraction)
         self.selected_clients = rd.sample(list(self.client_registry.values()), k)
         return self.selected_clients
