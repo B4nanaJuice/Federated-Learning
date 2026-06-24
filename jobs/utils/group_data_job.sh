@@ -17,7 +17,4 @@ spack load py-pip ^python@3.11.9
 mkdir -p output
 source /gpfs/home/griesmax/Federated-Learning/venv/bin/activate
 
-for defense in "distribution" "dataset" "distance" "similarity" "root_dataset" "log_dataset" "log_distance"; do
-    python /gpfs/home/griesmax/Federated-Learning/run.py group-data --save-filename "$defense partial"
-    python /gpfs/home/griesmax/Federated-Learning/run.py group-data --save-filename "$defense total"
-done
+python /gpfs/home/griesmax/Federated-Learning/run.py group-data --save-filename "20_gaussian_weights"
