@@ -1,6 +1,5 @@
 # Imports
 import copy
-import time
 import torch
 import torch.nn as nn
 from typing import Dict, List
@@ -29,14 +28,14 @@ class Client:
         self.current_round: int = 0
 
         # Local data
-        # self._train_tensor: torch.Tensor = torch.load(f'data/processed/train/{"iid" if iid else "noniid"}/building_{client_id}.pt')
-        self._train_tensor: torch.Tensor = torch.load(f'data/processed/train/{"iid" if iid else "noniid"}/building_1.pt')
+        self._train_tensor: torch.Tensor = torch.load(f'data/processed/train/{"iid" if iid else "noniid"}/building_{client_id}.pt')
+        # self._train_tensor: torch.Tensor = torch.load(f'data/processed/train/{"iid" if iid else "noniid"}/building_1.pt')
         self._train_features: torch.Tensor = self._train_tensor[:, :-3]
         self._train_targets: torch.Tensor = self._train_tensor[:, -3:]
         self.train_dataset: EnergyDataset = EnergyDataset(self._train_features, self._train_targets)
 
-        # self._validation_tensor: torch.Tensor = torch.load(f'data/processed/val/{"iid" if iid else "noniid"}/building_{client_id}.pt')
-        self._validation_tensor: torch.Tensor = torch.load(f'data/processed/val/{"iid" if iid else "noniid"}/building_1.pt')
+        self._validation_tensor: torch.Tensor = torch.load(f'data/processed/val/{"iid" if iid else "noniid"}/building_{client_id}.pt')
+        # self._validation_tensor: torch.Tensor = torch.load(f'data/processed/val/{"iid" if iid else "noniid"}/building_1.pt')
         self._validation_features: torch.Tensor = self._validation_tensor[:, :-3]
         self._validation_targets: torch.Tensor = self._validation_tensor[:, -3:]
         self.validation_dataset: EnergyDataset = EnergyDataset(self._validation_features, self._validation_targets)
@@ -48,11 +47,10 @@ class Client:
         self.loss_function: nn.MSELoss = nn.MSELoss()
         self.local_epochs: int = local_epochs
         self.batch_size: int = batch_size
-        self.optimizer: torch.optim.Optimizer = torch.optim.Adam(self.model.parameters(), lr = learning_rate)
+        self.learning_rate: float = learning_rate
 
         # Local metrics
         self.train_loss: float = float('inf')
-        self.compute_time: float = 0.0
         self.hist_train_loss: List[float] = []
         self.hist_validation_loss: List[float] = []
 
@@ -70,15 +68,16 @@ class Client:
     
     def train_local(self) -> None:
         """
-        Train the client's local model based on the locla dataset.
+        Train the client's local model based on the local dataset.
         """
-        t0: float = time.time()
-
         early_stopper: EarlyStopper = EarlyStopper(patience = 5, min_delta = 1e-3)
         self.model = self.model.to(device = config.DEVICE)
         self.model.train()
 
         logger.debug(f'Training local for client {self.client_id}')
+
+        # reset optimizer
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr = self.learning_rate)
 
         for _ in range(self.local_epochs):
             epoch_loss: float = 0.0
@@ -120,8 +119,6 @@ class Client:
                 if early_stopper.early_stop(val_loss):
                     logger.info(f'Client {self.client_id} stopped early at epoch {_+1}.')
                     break
-
-        self.compute_time = time.time() - t0
 
         return
 
