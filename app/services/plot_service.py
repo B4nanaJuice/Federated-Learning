@@ -182,25 +182,26 @@ class PlotService:
         assert len(dfs) == len(files)
         x_range: List[int] = list(range(1, len(dfs[0]['avg']) + 1))
 
+        ax = plt.subplot(111)
+
         for df, file in zip(dfs, files):
             # Plot average line
-            line = plt.plot(x_range, df['avg'], label = file)[0]
+            line = ax.plot(x_range, df['avg'], label = file.split('/')[-1])[0]
 
             # Error range with a lighter color
             color: str = line.get_color().replace('#', '')
             color = PlotService.lighten_color(color = color, amount = 100)
-            plt.fill_between(x_range, df['min'], df['max'], color = color)
+            ax.fill_between(x_range, df['min'], df['max'], color = color, alpha = .4)
 
-            # Show the range of the loss if behind other range, optionnal (can be removed for clarity)
-            # plt.plot(x_range, df['min'], '--', color = color)
-            # plt.plot(x_range, df['max'], '--', color = color)
-
-        plt.title('Training loss for partial attack on central server and defense')
-        plt.xlabel('Round')
-        plt.ylabel('Mean Square Error (MSE) Loss')
-        plt.yscale('log')
-        plt.xticks(x_range)
-        plt.legend()
+        plt.title('Training loss for local and global model poisoning attacks')
+        ax.set_xlabel('Round')
+        ax.set_ylabel('Mean Square Error (MSE) Loss')
+        ax.set_yscale('log')
+        ax.set_xticks(x_range)
+        ax.set_xlim(1, 20)
+        ax.grid(axis = 'y')
+        ax.legend()
+        ax.spines[['top', 'right']].set_visible(False)
         plt.show()
         return
 
