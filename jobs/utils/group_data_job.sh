@@ -22,13 +22,13 @@ for scoring in "distance" "dataset" "similarity" "distribution"; do
         python /gpfs/home/griesmax/Federated-Learning/run.py group-data --save-filename "$scoring $malicious"
     done
 
-    for partial in "partial" "total"; done
+    for partial in "partial" "total"; do
         python /gpfs/home/griesmax/Federated-Learning/run.py group-data --save-filename "$partial $malicious"
     done
 done
 
 for scoring in "log_distance" "log_dataset" "root_dataset"; do 
-    for partial in "partial" "total"; done
+    for partial in "partial" "total"; do
         python /gpfs/home/griesmax/Federated-Learning/run.py group-data --save-filename "$partial $malicious"
     done
 done
