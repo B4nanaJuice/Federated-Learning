@@ -15,7 +15,7 @@ class MaliciousEntity:
 
     Attributes:
         attack_rate (float | Callable = .2): How often the attack will happen. If `attack_rate` is set to a float between 0 and 1, then each round, a random number will be generated. If that number is below the `attack_rate`, the entity will poison the target. If the `attack_rate` is set to a Callable, then the poison will happen depending on the output of the method.
-        attack_method (str = 'gaussian_weights'): The method used for the poisoning. Available values are : 'gaussian noise' to add a gaussian noise to the values, 'gaussian_weights' to replaces the values by a random value following a gaussian distribution, 'uniform_noise' to add a uniform noise to the values, 'uniform_weights' to replace the values by a randopm value following a uniform distribution, 'gradient_inversion' to invert the sign of the values or 'gradient_amplification' to multiply the values by a certain coefficient.
+        attack_method (str = 'gaussian_weights'): The method used for the poisoning. Available values are : 'gaussian noise' to add a gaussian noise to the values, 'gaussian_weights' to replaces the values by a random value following a gaussian distribution, 'uniform_noise' to add a uniform noise to the values, 'uniform_weights' to replace the values by a randopm value following a uniform distribution, 'sign_flip' to invert the sign of the values or 'gradient_amplification' to multiply the values by a certain coefficient.
         attacked_rounds (List[int]): A list of the rounds when the entity poisoned the data.
         partial_attack (bool = False): Choose whether the entity poisons the entire model or only the last layers.
 
@@ -64,7 +64,7 @@ class MaliciousEntity:
                 fn = lambda layer: model[layer] + coef * torch.rand_like(model[layer])
             case 'uniform_weights':
                 fn = lambda layer: coef * torch.rand_like(model[layer])
-            case 'gradient_inversion':
+            case 'sign_flip':
                 fn = lambda layer: model[layer] * -coef
             case 'gradient_amplification':
                 fn = lambda layer: model[layer] * coef

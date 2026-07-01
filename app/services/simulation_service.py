@@ -134,7 +134,7 @@ class SimulationService:
         malicious_percentage: int = int(options.get('malicious', 0))
         assert 0 <= malicious_percentage <= 100
         attack_method: str = options.get('attack', 'gaussian_noise')
-        assert attack_method in ['gaussian_noise', 'gaussian_weights', 'uniform_noise', 'uniform_weights', 'gradient_inversion', 'gradient_amplification']
+        assert attack_method in ['gaussian_noise', 'gaussian_weights', 'uniform_noise', 'uniform_weights', 'sign_flip', 'gradient_amplification']
 
         ## Server parameters
         server_max_rounds: int = 20
