@@ -17,7 +17,7 @@ spack load py-pip ^python@3.11.9
 mkdir -p output
 source /gpfs/home/griesmax/Federated-Learning/venv/bin/activate
 
-for attack in "clean" "5_data" "20_data" "5_gaussian_weights" "20_gaussian_weights" "20_sign_flip" "20_gradient_amplification" "partial" "total"; done
+for attack in "clean" "5_data" "20_data" "5_gaussian_weights" "20_gaussian_weights" "20_sign_flip" "20_gradient_amplification" "partial" "total"; do
     python /gpfs/home/griesmax/Federated-Learning/run.py group-data --save-filename "$attack"
 done
 
