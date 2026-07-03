@@ -9,8 +9,8 @@ for scoring in "distance" "dataset" "distribution" "similarity"; do
     echo '#SBATCH --time=6:00:00' >> jobs/offline/offline_$scoring.sh;
     echo '#SBATCH --mem=16G' >> jobs/offline/offline_$scoring.sh;
     echo '#SBATCH --constraint=armgpu' >> jobs/offline/offline_$scoring.sh;
-    echo '#SBATCH --nodes=2' >> jobs/offline/offline_$scoring.sh;
-    echo '#SBATCH --cpus-per-task=1' >> jobs/offline/offline_$scoring.sh;
+    echo '#SBATCH --nodes=4' >> jobs/offline/offline_$scoring.sh;
+    echo '#SBATCH --cpus-per-task=8' >> jobs/offline/offline_$scoring.sh;
     echo '#SBATCH --gpus-per-node=1' >> jobs/offline/offline_$scoring.sh;
     echo "#SBATCH --job-name \"off $scoring\"" >> jobs/offline/offline_$scoring.sh;
     echo '#SBATCH --error=output/job.%J.err' >> jobs/offline/offline_$scoring.sh;
