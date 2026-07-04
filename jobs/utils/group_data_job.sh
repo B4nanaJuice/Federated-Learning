@@ -19,8 +19,6 @@ source /gpfs/home/griesmax/Federated-Learning/venv/bin/activate
 
 python /gpfs/home/griesmax/Federated-Learning/run.py group-data --save-filename "20_sign_flip"
 
-for defense in "fedavg" "krum" "mkrum" "norm" "cbaa" "tmean" "rfa" "fltrust" "clra"; do 
-    for malicious in {0..50..5}; do
-        python /gpfs/home/griesmax/Federated-Learning/run.py group-data --save-filename "$defense $malicious.0"
-    done
+for scoring in "distance" "distribution" "similarity" "dataset"; do
+    python /gpfs/home/griesmax/Federated-Learning/run.py group-data --save-filename "offline $scoring"
 done
