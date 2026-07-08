@@ -241,6 +241,58 @@ class SimulationService:
             server.save_metrics(f'{"partial" if attack_partial else "total"}_{run}')
         return
 
+    # Longer simulation
+    @staticmethod
+    def simulate_long_server_attack(*args, **options) -> None:
+        
+        # Simulation parameters from options
+        ## Overall parameters
+        run_count: int = 10
+
+        ## Attack parameters
+        attack_partial: bool = options.get('partial', 'true').lower() == 'true'
+        assert attack_partial in [True, False]
+
+        ## Server parameters
+        server_max_rounds: int = 30
+
+        ## Client parameters
+        client_count: int = 20
+        client_epochs: int = 15
+        client_batch_size: int = 128
+        client_lr: float = 1e-3
+        client_fraction: float = .5
+
+        for run in range(run_count):
+            
+            # Create Attacked server
+            server: Server = AttackedServer(
+                global_model = NormalMLP(),
+                max_rounds = server_max_rounds,
+                attack_rate = lambda x: x >= 13 if attack_partial else x == 19,
+                partial_attack = attack_partial
+            )
+
+            # Add Malicious clients
+            _ = 1
+            while _ <= client_count:
+                server.register_client(
+                    Client(
+                        client_id = _,
+                        model = NormalMLP(),
+                        local_epochs = client_epochs,
+                        batch_size = client_batch_size,
+                        learning_rate = client_lr,
+                    )
+                )
+                _ += 1
+
+            server.run(client_fraction = client_fraction)
+
+            server.run_test(dataset_index = 5, days_count = 5)
+            server.save_metrics(f'long_{"partial" if attack_partial else "total"}_{run}')
+        return
+
     # Scoring-based simulation
     @staticmethod
     def sigma_measurment(*args, **options) -> None:

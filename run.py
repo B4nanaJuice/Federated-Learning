@@ -43,6 +43,11 @@ def cmd_run_attack_server(args: list[str]):
     from app.services.simulation_service import SimulationService
     SimulationService.simulate_server_attack(**options)
 
+def cmd_run_long_attack_server(args: list[str]):
+    options = parse_named_options(args)
+    from app.services.simulation_service import SimulationService
+    SimulationService.simulate_long_server_attack(**options)
+
 def cmd_run_client_scoring(args: list[str]) -> None:
     logger.info('Running client scoring simulation')
     options = parse_named_options(args)
@@ -110,6 +115,7 @@ if __name__ == "__main__":
         case 'data':            cmd_run_data_poisoning(extra_args)
         case 'model':           cmd_run_model_poisoning(extra_args)
         case 'server':          cmd_run_attack_server(extra_args)
+        case 'long-server':     cmd_run_long_attack_server(extra_args)
         case 'client-scoring':  cmd_run_client_scoring(extra_args)
         case 'server-scoring':  cmd_run_server_scoring(extra_args)
         case 'run-decay':       cmd_run_decay(extra_args)
