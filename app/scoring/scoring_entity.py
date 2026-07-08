@@ -31,7 +31,7 @@ class ScoringEntity:
 
     Attributes:
         scores (Dict[str, float]): Scores of entities that sent a model to this entity.
-        metrix (ScoringMetric): Metrix used to compute the score.
+        metric (ScoringMetric): Metric used to compute the score.
         threshold (float): Value used to compare the score and decide if the model need to be replaced by the saved one.
         saved_model (Dict[str, torch.Tensor]): Model that will be loaded if the score is below the threshold.
         metric_parameters (Dict[str, any]): Parameters used to compute the metric. Used only for distance and dataset scoring metrics.

@@ -13,24 +13,33 @@ import threading
 logger = create_logger(__name__)
 
 class OfflineServer(AttackedServer):
+    """
+    Class representing the central server in a scenario where the clients can be in a degraded mode.
+
+    Attributes:
+        network (NetworkInterface): The network in which the server is.
+    """
     def __init__(self, global_model: nn.Module, **kwargs):
         super().__init__(global_model = global_model, **kwargs)
         self.network: NetworkInterface = None
 
     def register_network(self, network: NetworkInterface) -> None:
+        """
+        Register the network the server is in.
+
+        Args:
+            network (NetworkInterface): The network the aggregation server is currently in.
+        """
         self.network = network
         return
     
     def run(self, client_fraction: float = 1.0) -> None:
         for round in tqdm(range(1, self.max_rounds + 1), desc = 'Round'):
             self.select_clients(client_fraction)
-            logger.debug('Client selection finished, calling broadcast')
             threads = self.broadcast(round = round)
-            logger.debug('Broadcast finished, calling end_model_broadcast')
             self.network.end_model_broadcast(self.collect_updates) # Start model evaluation phase
             # Clients train their local model
             [t.join() for t in threads]
-            logger.debug('end_model_broadcast finished, calling aggregate')
             self.aggregate()
 
         return

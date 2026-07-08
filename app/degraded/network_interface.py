@@ -4,6 +4,9 @@ from app.models import Client
 import torch
 
 class NetworkInterface:
+    """
+    Interface of the Network class.
+    """
 
     # Method for registering clients (bool is for if the client has been added)
     def register_client(self, client: Client) -> bool: pass

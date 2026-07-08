@@ -10,6 +10,15 @@ import time
 logger = create_logger(__name__)
 
 class OfflineClient(ScoringClient):
+    """
+    Class representing a client (node) in a degraded training mode.
+
+    Attributes:
+        vote (bool): The vote of the client used in the majority vote.
+        network (NetworkInterface): The network in which the client is.
+        offline_training (bool): Information about the current training mode. It can only be changed with a majority vote.
+        temp_model (Dict[str, torch.tensor]): A temporary save of the received model which will be taken or discarded depending on the computed score and the majority vote.
+    """
     def __init__(self, client_id: int | str, **kwargs):
         super().__init__(client_id, **kwargs)
         self.vote: bool = None
@@ -18,10 +27,23 @@ class OfflineClient(ScoringClient):
         self.temp_model: Dict[str, torch.Tensor] = None
 
     def register_network(self, network: NetworkInterface) -> None:
+        """
+        Register the network the client is in.
+
+        Args:
+            network (NetworkInterface): The network the aggregation server is currently in.
+        """
         self.network = network
         return
     
     def receive_global_model(self, global_weights: Dict[int, torch.Tensor], round_id: int) -> None:
+        """
+        Receive global model weights from the server and update the local model. The received model is temporarily saved unbtil all the clients decided to keep the global model or not for the current training round.
+        
+        Args:
+            global_weights (Dict[int, torch.Tensor]): The global model weights received from the server.
+            round_id (int): The id of the began round.
+        """
 
         logger.debug(f'Client {self.client_id} received global model for round {round_id}')
         self.vote = None
@@ -46,6 +68,12 @@ class OfflineClient(ScoringClient):
         return
 
     def send_vote(self) -> bool:
+        """
+        Send the computed score as a vote to the network.
+
+        Returns:
+            bool: The vote of the client for the current round.
+        """
 
         while self.vote is None: # Wait until the client computed the score
             time.sleep(1)
@@ -54,6 +82,9 @@ class OfflineClient(ScoringClient):
         return self.vote
 
     def refresh_offline_training(self) -> None:
+        """
+        Wait the majority vote result and check if the round needs to be run in offline mode.
+        """
 
         # Wait for the right phase (Training mode decision phase)
         while self.network.get_phase() != 1:
@@ -66,7 +97,7 @@ class OfflineClient(ScoringClient):
     
     def train_local(self) -> None:
         """
-        Train the client's local model based on the locla dataset.
+        Train the client's local model based on the local dataset.
         """
 
         # Wait for the phase to be local training
@@ -87,6 +118,12 @@ class OfflineClient(ScoringClient):
         return super().train_local()
     
     def send_saved_model(self) -> Dict[str, torch.Tensor]:
+        """
+        Send the saved model to the network so the neighbour can use it and train it during offline training mode.
+
+        Returns:
+            Dict[str, torch.Tensor]: The client's saved model.
+        """
         return self.saved_model
     
     def __repr__(self) -> str:
