@@ -15,6 +15,284 @@ logger = create_logger(__name__)
 # Static class with methods
 class SimulationService:
 
+    # Baseline simulations
+    @staticmethod
+    def simulate_baseline(*args, **options) -> None:
+        
+        # Simulation parameters from options
+        ## Overall parameters
+        run_count: int = 10
+
+        ## Server parameters
+        server_max_rounds: int = 20
+
+        ## Client parameters
+        client_count: int = 20
+        client_epochs: int = 15
+        client_batch_size: int = 128
+        client_lr: float = 1e-3
+        client_fraction: float = .5
+
+        for run in range(run_count):
+            
+            # Create Attacked server
+            server: Server = Server(
+                global_model = NormalMLP(),
+                max_rounds = server_max_rounds
+            )
+
+            for _ in range(client_count):
+                server.register_client(
+                    Client(
+                        client_id = _+1,
+                        model = NormalMLP(),
+                        local_epochs = client_epochs,
+                        batch_size = client_batch_size,
+                        learning_rate = client_lr
+                    )
+                )
+
+            server.run(client_fraction = client_fraction)
+
+            server.run_test(dataset_index = 5, days_count = 5)
+            server.save_metrics(f'clean_{run}')
+        return
+    
+    # Baseline simulations
+    @staticmethod
+    def simulate_data_poisoning(*args, **options) -> None:
+        
+        # Simulation parameters from options
+        ## Overall parameters
+        run_count: int = 10
+
+        ## Attack parameters
+        malicious_percentage: int = int(options.get('malicious', 0))
+        assert 0 <= malicious_percentage <= 100
+
+        ## Server parameters
+        server_max_rounds: int = 20
+
+        ## Client parameters
+        client_count: int = 20
+        client_epochs: int = 15
+        client_batch_size: int = 128
+        client_lr: float = 1e-3
+        client_fraction: float = .5
+
+        for run in range(run_count):
+            
+            # Create Attacked server
+            server: Server = Server(
+                global_model = NormalMLP(),
+                max_rounds = server_max_rounds
+            )
+
+            # Add Malicious clients
+            _ = 1
+            while _ <= int(client_count * malicious_percentage / 100):
+                server.register_client(
+                    MaliciousClient(
+                        client_id = _,
+                        model = NormalMLP(),
+                        local_epochs = client_epochs,
+                        batch_size = client_batch_size,
+                        learning_rate = client_lr,
+                        attack_rate = 1,
+                        attack_target = 'data'
+                    )
+                )
+                _ += 1
+
+            while _ <= client_count:
+                server.register_client(
+                    Client(
+                        client_id = _,
+                        model = NormalMLP(),
+                        local_epochs = client_epochs,
+                        batch_size = client_batch_size,
+                        learning_rate = client_lr,
+                    )
+                )
+                _ += 1
+
+            server.run(client_fraction = client_fraction)
+
+            server.run_test(dataset_index = 5, days_count = 5)
+            server.save_metrics(f'{malicious_percentage}_data_{run}')
+        return
+    
+    # Baseline simulations
+    @staticmethod
+    def simulate_model_poisoning(*args, **options) -> None:
+        
+        # Simulation parameters from options
+        ## Overall parameters
+        run_count: int = 10
+
+        ## Attack parameters
+        malicious_percentage: int = int(options.get('malicious', 0))
+        assert 0 <= malicious_percentage <= 100
+        attack_method: str = options.get('attack', 'gaussian_noise')
+        assert attack_method in ['gaussian_noise', 'gaussian_weights', 'uniform_noise', 'uniform_weights', 'sign_flip', 'gradient_amplification']
+
+        ## Server parameters
+        server_max_rounds: int = 20
+
+        ## Client parameters
+        client_count: int = 20
+        client_epochs: int = 15
+        client_batch_size: int = 128
+        client_lr: float = 1e-3
+        client_fraction: float = .5
+
+        for run in range(run_count):
+            
+            # Create Attacked server
+            server: Server = Server(
+                global_model = NormalMLP(),
+                max_rounds = server_max_rounds
+            )
+
+            # Add Malicious clients
+            _ = 1
+            while _ <= int(client_count * malicious_percentage / 100):
+                server.register_client(
+                    MaliciousClient(
+                        client_id = _,
+                        model = NormalMLP(),
+                        local_epochs = client_epochs,
+                        batch_size = client_batch_size,
+                        learning_rate = client_lr,
+                        attack_rate = 1,
+                        attack_method = attack_method,
+                        attack_target = 'model'
+                    )
+                )
+                _ += 1
+
+            while _ <= client_count:
+                server.register_client(
+                    Client(
+                        client_id = _,
+                        model = NormalMLP(),
+                        local_epochs = client_epochs,
+                        batch_size = client_batch_size,
+                        learning_rate = client_lr,
+                    )
+                )
+                _ += 1
+
+            server.run(client_fraction = client_fraction)
+
+            server.run_test(dataset_index = 5, days_count = 5)
+            server.save_metrics(f'{malicious_percentage}_{attack_method}_{run}')
+        return
+    
+    # Baseline simulations
+    @staticmethod
+    def simulate_server_attack(*args, **options) -> None:
+        
+        # Simulation parameters from options
+        ## Overall parameters
+        run_count: int = 10
+
+        ## Attack parameters
+        attack_partial: bool = options.get('partial', 'true').lower() == 'true'
+        assert attack_partial in [True, False]
+
+        ## Server parameters
+        server_max_rounds: int = 20
+
+        ## Client parameters
+        client_count: int = 20
+        client_epochs: int = 15
+        client_batch_size: int = 128
+        client_lr: float = 1e-3
+        client_fraction: float = .5
+
+        for run in range(run_count):
+            
+            # Create Attacked server
+            server: Server = AttackedServer(
+                global_model = NormalMLP(),
+                max_rounds = server_max_rounds,
+                attack_rate = lambda x: x in list(range(13, 21)) if attack_partial else x == 19,
+                partial_attack = attack_partial
+            )
+
+            # Add Malicious clients
+            _ = 1
+            while _ <= client_count:
+                server.register_client(
+                    Client(
+                        client_id = _,
+                        model = NormalMLP(),
+                        local_epochs = client_epochs,
+                        batch_size = client_batch_size,
+                        learning_rate = client_lr,
+                    )
+                )
+                _ += 1
+
+            server.run(client_fraction = client_fraction)
+
+            server.run_test(dataset_index = 5, days_count = 5)
+            server.save_metrics(f'{"partial" if attack_partial else "total"}_{run}')
+        return
+
+    # Longer simulation
+    @staticmethod
+    def simulate_long_server_attack(*args, **options) -> None:
+        
+        # Simulation parameters from options
+        ## Overall parameters
+        run_count: int = 10
+
+        ## Attack parameters
+        attack_partial: bool = options.get('partial', 'true').lower() == 'true'
+        assert attack_partial in [True, False]
+
+        ## Server parameters
+        server_max_rounds: int = 30
+
+        ## Client parameters
+        client_count: int = 20
+        client_epochs: int = 15
+        client_batch_size: int = 128
+        client_lr: float = 1e-3
+        client_fraction: float = .5
+
+        for run in range(run_count):
+            
+            # Create Attacked server
+            server: Server = AttackedServer(
+                global_model = NormalMLP(),
+                max_rounds = server_max_rounds,
+                attack_rate = lambda x: x >= 13 if attack_partial else x == 19,
+                partial_attack = attack_partial
+            )
+
+            # Add Malicious clients
+            _ = 1
+            while _ <= client_count:
+                server.register_client(
+                    Client(
+                        client_id = _,
+                        model = NormalMLP(),
+                        local_epochs = client_epochs,
+                        batch_size = client_batch_size,
+                        learning_rate = client_lr,
+                    )
+                )
+                _ += 1
+
+            server.run(client_fraction = client_fraction)
+
+            server.run_test(dataset_index = 5, days_count = 5)
+            server.save_metrics(f'long_{"partial" if attack_partial else "total"}_{run}')
+        return
+
     # Scoring-based simulation
     @staticmethod
     def sigma_measurment(*args, **options) -> None:
@@ -203,7 +481,7 @@ class SimulationService:
                 global_model = NormalMLP(),
                 max_rounds = server_max_rounds,
                 partial_attack = attack_partial,
-                attack_rate = lambda x: x in [5, 6, 7, 17, 18, 19] if attack_partial else x == 19
+                attack_rate = lambda x: x in list(range(13, 21)) if attack_partial else x == 19
             )
 
             for _ in range(client_count):
@@ -354,7 +632,7 @@ class SimulationService:
                 global_model = NormalMLP(),
                 max_rounds = server_max_rounds,
                 partial_attack = attack_partial,
-                attack_rate = lambda x: x in [5, 6, 7, 17, 18, 19] if attack_partial else x == 19
+                attack_rate = lambda x: x in list(range(13, 21)) if attack_partial else x == 19
             )
 
             for _ in range(client_count):
@@ -498,7 +776,7 @@ class SimulationService:
             'global_model': NormalMLP(),
             'max_rounds': server_max_rounds, # 20
             'partial_attack': attack_partial,
-            'attack_rate': lambda x: x in [5, 6, 7, 17, 18, 19] if attack_partial else x == 19
+            'attack_rate': lambda x: x in list(range(13, 21)) if attack_partial else x == 19
         }
 
         for run in range(run_count):
@@ -517,7 +795,7 @@ class SimulationService:
 
             for _ in range(client_count):
                 server.register_client(
-                    ScoringClient(
+                    Client(
                         client_id = _+1,
                         model = NormalMLP(),
                         local_epochs = client_epochs,
@@ -610,6 +888,76 @@ class SimulationService:
             server.run_test(dataset_index = 5, days_count = 5)
             server.save_metrics(f'{defense} {malicious_percentage}_{run}')
         return
+    
+    # Offline training simulation
+    @staticmethod
+    def simulate_offline_training(*args, **options) -> None:
+        from app.degraded.network import Network
+        from app.degraded.offline_client import OfflineClient
+        from app.degraded.offline_server import OfflineServer
+    
+        # Simulation parameters from options
+        ## Overall parameters
+        run_count: int = 10
+
+        ## Attack parameters
+        attack_partial: bool = True
+
+        ## Scoring parameters
+        scoring_metric_str: str = options.get('metric', 'distance')
+        scoring_metric: ScoringMetric = ScoringMetric[scoring_metric_str.upper()]
+        scoring_threshold: float = .4
+        scoring_sigma: float = {
+            ScoringMetric.DISTANCE: 7,
+            ScoringMetric.DATASET: .3
+        }.get(scoring_metric)
+
+        scoring_parameters: Dict[str, any] = {'sigma': scoring_sigma}
+
+        ## Server parameters
+        server_max_rounds: int = 20
+
+        ## Client parameters
+        client_count: int = 20
+        client_epochs: int = 15
+        client_batch_size: int = 128
+        client_lr: float = 1e-3
+        client_fraction: float = .5
+
+        for run in range(run_count):
+
+            # create network and server
+            network: Network = Network()
+            server: OfflineServer = OfflineServer(
+                global_model = NormalMLP(), 
+                max_rounds = server_max_rounds, 
+                partial_attack = attack_partial, 
+                attack_rate = lambda x: x in list(range(13, 21))
+            )
+            server.register_network(network)
+
+            clients: List[OfflineClient] = []
+            for _ in range(1, client_count + 1):
+                clients.append(
+                    OfflineClient(
+                        client_id = _,
+                        model = NormalMLP(),
+                        metric = scoring_metric,
+                        threshold = scoring_threshold,
+                        metric_parameters = scoring_parameters,
+                        local_epochs = client_epochs,
+                        batch_size = client_batch_size,
+                        learning_rate = client_lr
+                    )
+                )
+            network.register_clients(clients)
+            server.register_clients(clients)
+
+            server.run(client_fraction = client_fraction)
+
+            server.run_test(dataset_index = 5, days_count = 5)
+            server.save_metrics(f'offline {scoring_metric_str}_{run}')
+        return
 
     # Method for grouping data
     @staticmethod
@@ -628,7 +976,7 @@ class SimulationService:
         columns: List[str] = ['load', 'pv', 'net']
 
         output_data: Dict[str, any] = {
-            'training_loss': None,
+            'training_loss': [],
             'MAE': {k: [] for k in ['load', 'pv', 'net']},
             'MSE': {k: [] for k in ['load', 'pv', 'net']},
             'RMSE': {k: [] for k in ['load', 'pv', 'net']}
@@ -640,10 +988,7 @@ class SimulationService:
 
             # Append training loss
             # Output list of list is a matrix with run_count rows and rounds columns
-            if not output_data['training_loss']:
-                output_data['training_loss'] = [np.array(data['training_loss']).mean(axis = 1)]
-            else:
-                output_data['training_loss'] = np.append(output_data['training_loss'], [np.array(data['training_loss']).mean(axis = 1)], axis = 0).tolist()
+            output_data['training_loss'].append([sum(_)/len(_) for _ in data['training_loss']])
 
             # Append each metric for each column
             for _m in metrics_name:

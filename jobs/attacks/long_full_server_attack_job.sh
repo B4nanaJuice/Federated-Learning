@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #SBATCH --account="r260042"
-#SBATCH --time=6:00:00
+#SBATCH --time=10:00:00
 #SBATCH --mem=16G
 #SBATCH --constraint=armgpu
 #SBATCH --nodes=2
@@ -18,4 +18,4 @@ mkdir -p output
 source /gpfs/home/griesmax/Federated-Learning/venv/bin/activate
 
 # Attacker that has total access on server's model
-python run.py server --partial false
+python run.py long-server --partial false

@@ -3,6 +3,7 @@ import copy
 import json
 import torch
 import threading
+import random as rd
 import torch.nn as nn
 from tqdm import tqdm
 from sklearn.metrics import mean_squared_error, root_mean_squared_error, mean_absolute_error
@@ -10,7 +11,7 @@ from typing import Optional, Dict, List
 
 from app.models.client import Client
 from config import create_logger, config
-from app.services import AggregationService
+from app.services.aggregation_service import AggregationService
 from app.models.dataloader import EnergyDataset
 
 logger = create_logger(__name__)
@@ -22,6 +23,8 @@ class Server:
                  max_rounds: int = 50,
                  **kwargs
                  ):
+        
+        rd.seed(0)
         
         # Coordination
         self.current_round: int = 0
@@ -73,17 +76,17 @@ class Server:
         Returns:
             List[Client]: A list containing the selected clients.
         """
-        import random as rd
+        
         k = int(len(self.client_registry) * fraction)
         self.selected_clients = rd.sample(list(self.client_registry.values()), k)
         return self.selected_clients
     
-    def broadcast(self, round: int, threaded: bool = config.SIM_THREADED) -> Dict[str, torch.Tensor]:
+    def broadcast(self, round_id: int, threaded: bool = config.SIM_THREADED) -> Dict[str, torch.Tensor]:
         """
         Broadcast the model to selected clients.
 
         Args:
-            round (int): The current round.
+            round_id (int): The current round.
             threaded (bool = config.SIM_THREADED): Broadcast the model in parallel or on a signle thread.
 
         Returns:
@@ -94,13 +97,13 @@ class Server:
         if threaded:
             threads: List[threading.Thread] = []
             for client in self.selected_clients:
-                threads.append(threading.Thread(target = client.receive_global_model, args = (self.broadcast_model, round)))
+                threads.append(threading.Thread(target = client.receive_global_model, args = (self.broadcast_model, round_id)))
 
             [t.start() for t in threads]
             [t.join() for t in threads]
         else:
             for client in self.selected_clients:
-                client.receive_global_model(self.broadcast_model, round)
+                client.receive_global_model(self.broadcast_model, round_id)
             pass
         return self.broadcast_model
     
@@ -151,9 +154,9 @@ class Server:
         Args:
             client_fraction (float = 1.0): The fraction of clients that will participate in each round.
         """
-        for round in tqdm(range(1, self.max_rounds + 1), desc = 'Round'):
+        for round_id in tqdm(range(1, self.max_rounds + 1), desc = 'Round'):
             self.select_clients(client_fraction)
-            self.broadcast(round = round)
+            self.broadcast(round_id = round_id)
             self.collect_updates()
             self.aggregate()
 

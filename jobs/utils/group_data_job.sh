@@ -17,14 +17,8 @@ spack load py-pip ^python@3.11.9
 mkdir -p output
 source /gpfs/home/griesmax/Federated-Learning/venv/bin/activate
 
-for scoring in "distance" "dataset"; do
-    for decay in "root" "log"; do
-        for partial in "partial" "total"; do
-            python /gpfs/home/griesmax/Federated-Learning/run.py group-data --save-filename "${decay}_$scoring $partial"
-        done
+python /gpfs/home/griesmax/Federated-Learning/run.py group-data --save-filename "20_sign_flip"
 
-        for malicious in {0..100..5}; do
-            python /gpfs/home/griesmax/Federated-Learning/run.py group-data --save-filename "${decay}_$scoring $malicious"
-        done
-    done
+for scoring in "distance" "distribution" "similarity" "dataset"; do
+    python /gpfs/home/griesmax/Federated-Learning/run.py group-data --save-filename "offline $scoring"
 done

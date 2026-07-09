@@ -20,7 +20,7 @@ logs/
 save/
 
 # Temp documentation
-rapport/
+rapport*/
 synthèses/
 
 # Validation dataset for metric

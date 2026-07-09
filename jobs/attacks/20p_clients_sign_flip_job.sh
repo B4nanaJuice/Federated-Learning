@@ -6,7 +6,7 @@
 #SBATCH --nodes=2
 #SBATCH --cpus-per-task=1
 #SBATCH --gpus-per-node=1
-#SBATCH --job-name "20% inversion"
+#SBATCH --job-name "20% sign flip"
 #SBATCH --comment "Clean run with 10 simulations, 20 total clients and 4 malicious clients, 10 clients per round for 20 rounds"
 #SBATCH --error=output/job.%J.err
 #SBATCH --output=output/job.%J.out
@@ -18,12 +18,4 @@ mkdir -p output
 source /gpfs/home/griesmax/Federated-Learning/venv/bin/activate
 
 # 5% malicious clients attacking their data continuously
-python run.py run-simulation --run-count 10 \
-    --max-rounds 20 \
-    --total-clients 20 \
-    --malicious-client-count 4 \
-    --client-fraction 0.5 \
-    --epochs 15 \
-    --save-filename "clients_gradient_inversion" \
-    --client-attack-rate "lambda x: True" \
-    --client-attack-method "gradient-inversion"
+python run.py model --malicious 20 --attack "sign_flip"
