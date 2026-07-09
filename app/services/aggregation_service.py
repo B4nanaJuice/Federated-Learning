@@ -15,6 +15,15 @@ class AggregationService:
     # FedAvg
     @staticmethod
     def fed_avg(updates: List[Dict], *args, **kwargs) -> Dict[str, torch.Tensor]:
+        """
+        Federated Averaging aggregation method.
+
+        Args:
+            updates (List[Dict]): List of each client update containing the local model weights.
+
+        Returns:
+            Dict[str, torch.Tensor]: The aggregated model.
+        """
         aggregated: Dict[str, torch.Tensor] = {}
         update_count: int = len(updates)
 
@@ -29,6 +38,16 @@ class AggregationService:
     # Weighted avg
     @staticmethod
     def weighted_fed_avg(updates: List[Dict], weights: Dict[str, float], *args, **kwargs) -> Dict[str, torch.Tensor]:
+        """
+        Weighted Federated Averaging aggregation method.
+
+        Args:
+            updates (List[Dict]): List of each client update containing the local model weights.
+            weights (Dict[str, float]): List of each client weight in the average.
+
+        Returns:
+            Dict[str, torch.Tensor]: The aggregated model.
+        """
         aggregated: Dict[str, torch.Tensor] = {}
         sum_weights: float = sum(weights.values())
 
@@ -46,7 +65,17 @@ class AggregationService:
     # Multi krum
     @staticmethod
     def m_krum(updates: List[Dict], n_byzantine: int, m: int = None, *args, **kwargs) -> Dict[str, torch.Tensor]:
-        
+        """
+        Multi-Krum aggregation method.
+
+        Args:
+            updates (List[Dict]): List of each client update containing the local model weights.
+            n_byzantine (int): Number of supposed byzantine clients.
+            m (int = None): Number of clients taken for the aggregation. By default, it is set to `len(updates) - n_byzantine`.
+
+        Returns:
+            Dict[str, torch.Tensor]: The aggregated model.
+        """
         update_count: int = len(updates)
         if update_count <= 2 * n_byzantine + 2:
             print(f'M-Krum needs at least {2 * n_byzantine + 3} clients for f = {n_byzantine}')
@@ -104,7 +133,16 @@ class AggregationService:
     # Norm based aggregation
     @staticmethod
     def norm_based_aggregation(updates: List[Dict], n_exclude: int = 1, *args, **kwargs) -> Dict[str, torch.Tensor]:
-        
+        """
+        Norm based aggregation method.
+
+        Args:
+            updates (List[Dict]): List of each client update containing the local model weights.
+            n_exclude (int = 1): Number of updates to exclude from the aggregation process.
+
+        Returns:
+            Dict[str, torch.Tensor]: The aggregated model.
+        """
         n_clients = len(updates)
     
         # If not enough clients, use FedAvg
@@ -148,7 +186,17 @@ class AggregationService:
     # DBAA-FedAvg
     @staticmethod
     def cbaa_fed_avg(updates: List[Dict], quantize: bool = True, n_bits: int = 8) -> Dict[str, torch.Tensor]:
-        
+        """
+        Centroid-Based Anomaly-Aware Federated Averaging aggregation method.
+
+        Args:
+            updates (List[Dict]): List of each client update containing the local model weights.
+            quantize (bool = True): Option to enable quantification before aggregation.
+            n_bits (int = 8): Number of bits on which the quantification will be done.
+
+        Returns:
+            Dict[str, torch.Tensor]: The aggregated model.
+        """
         n_clients = len(updates)
         model_weights: List[Dict[str, torch.Tensor]] = [_.get('weights') for _ in updates]
     
@@ -231,7 +279,16 @@ class AggregationService:
     # Trimmed Mean aggregation method
     @staticmethod
     def t_mean(updates: List[Dict], n_exclude: int = 1, *args, **kwargs) -> Dict[str, torch.Tensor]:
-        
+        """
+        Trimmed-Mean aggregation method.
+
+        Args:
+            updates (List[Dict]): List of each client update containing the local model weights.
+            n_exclude (int = 1): Number of clients to exclude form the aggregation process.
+
+        Returns:
+            Dict[str, torch.Tensor]: The aggregated model.
+        """
         aggregated: Dict[str, torch.Tensor] = {}
         models: List[Dict[str, torch.Tensor]] = [_.get('weights') for _ in updates]
 
@@ -246,7 +303,16 @@ class AggregationService:
     # Robust federated Aggregation
     @staticmethod
     def rfa(updates: List[Dict], norm_type: str = 'l2', *args, **kwargs) -> Dict[str, torch.Tensor]:
-        
+        """
+        Robust Federated Aggregation method.
+
+        Args:
+            updates (List[Dict]): List of each client update containing the local model weights.
+            norm_type (str = 'l2'): Norm used to compute distance. Available values are `'l1'` and `'l2'`.
+
+        Returns:
+            Dict[str, torch.Tensor]: The aggregated model.
+        """
         models: List[Dict[str, torch.Tensor]] = [_.get('weights') for _ in updates]
 
         # Compute median for each coordinate
@@ -301,7 +367,16 @@ class AggregationService:
     # FLTrust
     @staticmethod
     def fl_trust(updates: List[Dict], reference_model: Dict[str, torch.Tensor], *args, **kwargs) -> Dict[str, torch.Tensor]:
-        
+        """
+        FL Trust aggregation method.
+
+        Args:
+            updates (List[Dict]): List of each client update containing the local model weights.
+            reference_model (Dict[str, torch.Tensor]): Reference model used to compute cosine similarity.
+
+        Returns:
+            Dict[str, torch.Tensor]: The aggregated model.
+        """
         update_count: int = len(updates)
         models: List[Dict[str, torch.Tensor]] = [_.get('weights') for _ in updates]
 
@@ -354,7 +429,17 @@ class AggregationService:
     # CLRA
     @staticmethod
     def clra(updates: List[Dict], reference_model: Dict[str, torch.Tensor], similarity_threshold: float = 0.5, *args, **kwargs) -> Dict[str, torch.Tensor]:
+        """
+        CLRA aggregation method.
 
+        Args:
+            updates (List[Dict]): List of each client update containing the local model weights.
+            reference_model (Dict[str, torch.Tensor]): Reference model used to compute layer-wise cosine similarity.
+            similarity_threshold (float = 0.5): Threshold used to exclude or keep a layer in the aggregation process.
+
+        Returns:
+            Dict[str, torch.Tensor]: The aggregated model.
+        """
         models: List[Dict[str, torch.Tensor]] = [_.get('weights') for _ in updates]
         n_clients = len(models)
         layer_names = list(models[0].keys())
@@ -425,6 +510,16 @@ class AggregationService:
     # Cosine similarity layerwise
     @staticmethod
     def _cosine_similarity_layer(layer_a: torch.Tensor, layer_b: torch.Tensor) -> float:
+        """
+        Method to compute sosine similarity between two models layer.
+
+        Args:
+            layer_a (torch.Tensor): First layer.
+            layer_b (torch.Tensor): Second layer.
+
+        Returns:
+            float: Cosine similarity between the two layers.
+        """
         a_flat = layer_a.flatten().float().cpu()
         b_flat = layer_b.flatten().float().cpu()
     
