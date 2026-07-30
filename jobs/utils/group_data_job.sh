@@ -17,8 +17,5 @@ spack load py-pip ^python@3.11.9
 mkdir -p output
 source /gpfs/home/griesmax/Federated-Learning/venv/bin/activate
 
-python /gpfs/home/griesmax/Federated-Learning/run.py group-data --save-filename "20_sign_flip"
-
-for scoring in "distance" "distribution" "similarity" "dataset"; do
-    python /gpfs/home/griesmax/Federated-Learning/run.py group-data --save-filename "offline $scoring"
-done
+python /gpfs/home/griesmax/Federated-Learning/run.py group-data --save-filename "long_partial"
+python /gpfs/home/griesmax/Federated-Learning/run.py group-data --save-filename "long_total"
