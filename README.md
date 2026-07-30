@@ -70,6 +70,7 @@ Federated-Learning/
 │   ├── offline/                  # Degraded-mode training job
 │   └── utils/                    # Utility jobs (preprocessing, data grouping)
 ├── requirements.txt              # Python dependencies
+├── simulation results.zip        # JSON files containing training loss, test MAE/MSE/RMSE for simulations
 └── run.py                        # Command-line entry point
 ```
 
